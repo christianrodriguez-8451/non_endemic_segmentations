@@ -3,8 +3,31 @@
 
 # COMMAND ----------
 
+def get_latest_modified_directory(pDirectory):
+    """
+    get_latest_modified_file_from_directory:
+        For a given path to a directory in the data lake, return the directory that was last modified. 
+        Input path format expectation: 'abfss://x@sa8451x.dfs.core.windows.net/
+    """
+    #Set to get a list of all folders in this directory and the last modified date time of each
+    vDirectoryContentsList = list(dbutils.fs.ls(pDirectory))
+
+    #Convert the list returned from get_dir_content into a dataframe so we can manipulate the data easily. Provide it with column headings. 
+    #You can alternatively sort the list by LastModifiedDateTime and get the top record as well. 
+    df = spark.createDataFrame(vDirectoryContentsList,['FullFilePath', 'LastModifiedDateTime'])
+
+    #Get the latest modified date time scalar value
+    maxLatestModifiedDateTime = df.agg({"LastModifiedDateTime": "max"}).collect()[0][0]
+
+    #Filter the data frame to the record with the latest modified date time value retrieved
+    df_filtered = df.filter(df.LastModifiedDateTime == maxLatestModifiedDateTime)
+    
+    #return the file name that was last modifed in the given directory
+    return df_filtered.first()['FullFilePath']
+
 # Set path for product vectors
-product_vectors_path = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/last_year_product_vectors_diet_description/' + today + '/upc_vectors"
+product_vectors_path = get_latest_modified_directory("abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/allpimto_product_vectors_diet_description/") 
+product_vectors_path = product_vectors_path + 'upc_vectors/'
 product_vectors_df = spark.read.parquet(product_vectors_path)
 
 # Specify the model directory on DBFS
@@ -24,7 +47,7 @@ from dateutil.relativedelta import relativedelta
 today_year_ago = (datetime.today() - relativedelta(years=1)).strftime('%Y-%m-%d')
 today = datetime.today().strftime('%Y-%m-%d')
 today_time = datetime.now()
-duration_time = (today_time + relativedelta(weeks=26))
+duration_time = (today_time + relativedelta(weeks=52))
 
 # Get current ISO 8601 datetime in string format
 iso_start_date = today_time.isoformat()
@@ -39,6 +62,7 @@ embedding_queries = ['paleo', 'vegan', 'ketogenic']
 from pyspark.sql import types as t
 from pyspark.sql.column import Column
 from pyspark.sql.window import Window
+from pyspark.sql import functions as f
 import numpy as np
 
 @f.udf(returnType=t.FloatType())
@@ -50,7 +74,7 @@ def create_upc_json(df):
   upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
   upc_string = '","'.join(upc_list)
   
-  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ iso_start_date +'","endDate":"'+ iso_end_date +'","duration":26},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"Stevens Brand New Segment","description":"A description here, but its totally optional."}'
+  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ iso_start_date +'","endDate":"'+ iso_end_date +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"Stevens Brand New Segment","description":"A description here, but its totally optional."}'
   return upc_format
 
 def create_search_df(df):
@@ -62,7 +86,6 @@ def create_dot_df(product_vectors_df, array_query_col):
   return dot_products_df
 
 def create_array_query(query_vector):
-  from pyspark.sql import functions as f
   array_query_col = f.array([f.lit(i) for i in query_vector])
   return array_query_col
 
