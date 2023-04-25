@@ -1,8 +1,4 @@
 # Databricks notebook source
-# MAGIC %pip install sentence_transformers
-
-# COMMAND ----------
-
 def get_latest_modified_directory(pDirectory):
     """
     get_latest_modified_file_from_directory:
