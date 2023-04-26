@@ -107,10 +107,12 @@ def create_array_query(query_vector):
 for query in embedding_queries:
   # Encoding the query, make it a pyspark vector we can take the dot product of later
   query_vector = model.encode(query, normalize_embeddings = True).tolist()
+  search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
+  search_df.write.mode("overwrite").parquet('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_query_embeddings/cycle_date=' + today + '/diet_' + query + '')
   json_payload = create_upc_json(create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector))), query)
   rdd = spark.sparkContext.parallelize(json_payload)
   df2 = spark.read.json(rdd)
-  df2.write.mode("overwrite").json('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_upcs/cycle_date=' + today + '/diet_' + query + '_' + today + '.json')
+  df2.write.mode("overwrite").json('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_upcs/cycle_date=' + today + '/diet_' + query + '')
 
 # COMMAND ----------
 
