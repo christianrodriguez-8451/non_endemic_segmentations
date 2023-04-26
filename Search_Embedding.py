@@ -82,15 +82,15 @@ import numpy as np
 def get_dot_product_udf(a: Column, b: Column):
     return float(np.asarray(a).dot(np.asarray(b)))
 
-def create_upc_json(df):
+def create_upc_json(df, query):
   from pyspark.sql.functions import collect_list
   upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
   upc_string = '","'.join(upc_list)
   
-  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ iso_start_date +'","endDate":"'+ iso_end_date +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"Stevens Brand New Segment","description":"A description here, but its totally optional."}'
+  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ iso_start_date +'","endDate":"'+ iso_end_date +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"'+ query +'","description":"Buyers of '+ upc_string +' products."}'
   return upc_format
 
-def create_search_df(df):
+def create_search_df(dot_products_df):
   search_output_df = (dot_products_df.filter(f.col('dot_product')>=.3))
   return search_output_df
 
@@ -107,7 +107,11 @@ def create_array_query(query_vector):
 for query in embedding_queries:
   # Encoding the query, make it a pyspark vector we can take the dot product of later
   query_vector = model.encode(query, normalize_embeddings = True).tolist()
-  json_payload = create_upc_json(create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector))))
+  json_payload = create_upc_json(create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector))), query)
   rdd = spark.sparkContext.parallelize(json_payload)
   df2 = spark.read.json(rdd)
   df2.write.mode("overwrite").json('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_upcs/cycle_date=' + today + '/diet_' + query + '_' + today + '.json')
+
+# COMMAND ----------
+
+
