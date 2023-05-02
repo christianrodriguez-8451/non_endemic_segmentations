@@ -68,6 +68,15 @@ iso_end_date = duration_time.isoformat()
 
 embedding_queries = ['paleo', 'vegan', 'ketogenic']
 
+#When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
+# the directory_structure.  
+# ['AYERVEDIC', 'LOW BACTERIA', 'COELIAC', 'DIABETIC', 'Engine 2', 'FREE FROM GLUTEN', 'GLYCEMIC', 'Grain free', 'HALAL', \
+#'Healthy Eating', 'Healthy Pregnancy', 'Heart Friendly', 'HGC', 'High protein', 'KEHILLA', 'KETOGENIC', 'Kidney-Friendly', \
+#'KOSHER', 'Lactose free', 'Low calorie', 'Low FODMAP', 'Low protein', 'Low salt', 'MACROBIOTIC', 'Mediterranean Diet', \
+#'METABOLIC', 'NON_VEG', 'PALEO', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', 'VEGAN', \
+#'VEGETARIAN', 'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
+
+
 # COMMAND ----------
 
 #taking dot product of query vector and product vector
@@ -108,11 +117,11 @@ for query in embedding_queries:
   # Encoding the query, make it a pyspark vector we can take the dot product of later
   query_vector = model.encode(query, normalize_embeddings = True).tolist()
   search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
-  search_df.write.mode("overwrite").parquet('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_query_embeddings/cycle_date=' + today + '/diet_' + query + '')
-  json_payload = create_upc_json(create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector))), query)
+  search_df.write.mode("overwrite").parquet('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_query_embeddings/cycle_date=' + today + '/' + query + '')
+  json_payload = create_upc_json(search_df, query)
   rdd = spark.sparkContext.parallelize(json_payload)
   df2 = spark.read.json(rdd)
-  df2.write.mode("overwrite").json('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_upcs/cycle_date=' + today + '/diet_' + query + '')
+  df2.write.mode("overwrite").json('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_upcs/cycle_date=' + today + '/' + query + '')
 
 # COMMAND ----------
 
