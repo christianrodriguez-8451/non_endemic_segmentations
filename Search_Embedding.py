@@ -46,6 +46,11 @@ product_vectors_df = spark.read.parquet(product_vectors_path)
 # Specify the model directory on DBFS
 model_dir = "/dbfs/dbfs/FileStore/users/s354840/pretrained_transformer_model" 
 
+embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
+diet_query_embeddings_dir = embedded_dimensions_dir + '/diet_query_embeddings/cycle_date='
+diet_upcs_dir = embedded_dimensions_dir + '/diet_upcs/cycle_date='
+egress_dir = embedded_dimensions_dir + '/egress/upc_list'
+
 # These packages are required for delivery
 from sentence_transformers import SentenceTransformer, util
 
@@ -96,7 +101,7 @@ def create_upc_json(df, query):
   upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
   upc_string = '","'.join(upc_list)
   
-  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ iso_start_date +'","endDate":"'+ iso_end_date +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"'+ query +'","description":"Buyers of '+ upc_string +' products."}'
+  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ iso_start_date +'","endDate":"'+ iso_end_date +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"'+ query +'","description":"Buyers of '+ query +' products."}'
   return upc_format
 
 def create_search_df(dot_products_df):
@@ -117,12 +122,10 @@ for query in embedding_queries:
   # Encoding the query, make it a pyspark vector we can take the dot product of later
   query_vector = model.encode(query, normalize_embeddings = True).tolist()
   search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
-  search_df.write.mode("overwrite").parquet('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_query_embeddings/cycle_date=' + today + '/' + query + '')
+  search_df.write.mode("overwrite").parquet(diet_query_embeddings_dir + today + '/' + query)
   json_payload = create_upc_json(search_df, query)
-  rdd = spark.sparkContext.parallelize(json_payload)
+  rdd = spark.sparkContext.parallelize([json_payload])
   df2 = spark.read.json(rdd)
-  df2.write.mode("overwrite").json('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/Users/s354840/embedded_dimensions/diet_upcs/cycle_date=' + today + '/' + query + '')
-
-# COMMAND ----------
-
-
+  df2.coalesce(1).write.mode("overwrite").json(diet_upcs_dir + today + '/' + query)
+  file_to_copy = get_largest_file_in_directory(diet_upcs_dir + today + '/' + query)
+  dbutils.fs.cp(file_to_copy, egress_dir +'/' + query + '_' + today + '.json')
