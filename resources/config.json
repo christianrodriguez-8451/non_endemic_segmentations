@@ -1,1 +1,24 @@
-
+{
+  "storage": {
+    "base_bucket": "abfss://personloyalty@sa8451dbxadhocprd.dfs.core.windows.net/customer_data_assets",
+    "weights": "{}_funlo_2.0/weights",
+    "segmentation": "{}_funlo_2.0/segmentation",
+    "preferred_store": "abfss://acds@sa8451posprd.dfs.core.windows.net/preferred_store"
+  },
+  "execution": {
+    "date_range_weights": {"4": 0.27, "3": 0.26, "2": 0.24, "1": 0.23},
+    "quarter_column_order": ["ehhn", "modality", "end_week", "stratum_week", "quarter", 
+                              "sales", "spend_percentile", "spend_rank",
+                              "visits", "enterprise_visits", "visit_penetration", "penetration_percentile", "penetration_rank", 
+                              "quarter_points", "weight", "recency_adjusted_quarter_points"],
+    "seg_column_order": ["ehhn", "modality", "end_week", "stratum_week", "segment"],
+    "excluded_division_codes": ["097"]
+  },
+  "vintages": {
+    "pickup": "combinations/{}_pickup_with_ocado",
+    "delivery": "combinations/{}_delivery_with_ocado",
+    "ecomm": "combinations/{}_pickup_and_delivery_with_ocado",
+    "instore": "{}_instore",
+    "enterprise": "combinations/{}_enterprise_nonship"
+  }
+}
