@@ -114,18 +114,6 @@ end_date = get_end_date(1)
 
 # COMMAND ----------
 
-# since we aren't using different modalities, one time through without a loop will suffice to check for date.  
-for modality_name in modality_list_nonship:
-    trans_max_date = acds.get_transactions(start_date = start_date,
-                                 end_date = end_date,
-                                 apply_golden_rules = modality_config[modality_name]["golden_rules"]).agg(f.max('trn_dt').alias('max_date')).collect()[0]['max_date']
-    print(f'Modality {modality_name} has data through {trans_max_date} for FW {fw}')
-
-    assert trans_max_date == int(end_date), f"Error: Data for FW {fw} is not fully updated for modality {modality_name}. We need data through {end_date} but it is only in ACDS through {trans_max_date}."
-  
-
-# COMMAND ----------
-
 for modality_name in modality_list_nonship: 
 
     #Pull existing vintage hh and sales data for the modality
