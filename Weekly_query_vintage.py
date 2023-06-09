@@ -107,7 +107,7 @@ upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_que
 
 # COMMAND ----------
 
-modality_list_nonship = ['ketogenic','paleo', 'vegan','enterprise'] # 
+modality_list_nonship = ['ketogenic', 'paleo', 'vegan', 'enterprise', 'vegetarian'] # 
 fw = get_fw(1)
 start_date = get_start_date(1)
 end_date = get_end_date(1)
