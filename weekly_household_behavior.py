@@ -37,7 +37,7 @@ from effodata import ACDS, golden_rules
 import kayday as kd
 
 # this doesn't seem to work like get_spark_session... maybe refactor
-acds = ACDS() #i will need to specify no sample mart
+acds = ACDS(use_sample_mart=False)
 
 import pyspark.sql.functions as f
 
@@ -591,12 +591,12 @@ def finalize_segs(new_hhs_df,
 ########################
 ##
 ## This file establishes assumes it is passed the correct households that need to be HML'd.
-## It generates the spend and visit penetration pillars and assigns weights accordingly
+## It generates the spend and unit penetration pillars and assigns weights accordingly
 ##
 
 def pull_hml_kpis(active_modality_kpis, preassigned_hml_hhs_df, quarters_df):
     '''
-    This function calculates quarter level spend and visit KPIs from provided Vintages DF.
+    This function calculates quarter level spend and unit KPIs from provided Vintages DF.
 
     Inputs:
     1) active_modality_kpis - spark DF of vintage KPIs for desired modality
@@ -604,7 +604,7 @@ def pull_hml_kpis(active_modality_kpis, preassigned_hml_hhs_df, quarters_df):
     3) quarters_df - spark DF that maps fiscal_week to quarter
 
     Output:
-    active_hml_kpis - spark DF that aggregates modality spend and visits at ehhn-quarter level
+    active_hml_kpis - spark DF that aggregates modality spend and units at ehhn-quarter level
     '''
     
     active_hml_kpis = (active_modality_kpis
@@ -615,7 +615,7 @@ def pull_hml_kpis(active_modality_kpis, preassigned_hml_hhs_df, quarters_df):
                        # use these to generate quartiles
                        .groupBy('ehhn', 'quarter')
                        .agg(f.sum('weekly_sales').alias('sales'),
-                            f.sum('weekly_visits').alias('visits')
+                            f.sum('weekly_units').alias('units')
                            )
                   )
     
@@ -637,10 +637,10 @@ def pull_ent_quarterly_behavior(acds, start_week, end_week, quarters_df):
     '''
 
     active_ent_quarterly_behavior = (pull_vintages_df(acds, 'enterprise', start_week, end_week, 'sales')
-                                         .select('ehhn', 'fiscal_week', 'weekly_visits')
+                                         .select('ehhn', 'fiscal_week', 'weekly_units')
                                          .join(quarters_df, 'fiscal_week', 'inner')
                                          .groupBy('ehhn', 'quarter')
-                                         .agg(f.sum('weekly_visits').alias('enterprise_visits'))
+                                         .agg(f.sum('weekly_units').alias('enterprise_units'))
                                     )
     
     return active_ent_quarterly_behavior
@@ -660,8 +660,8 @@ def combine_pillars(active_hml_kpis, active_ent_quarterly_behavior):
     
     pillars_df = (active_hml_kpis
                   .join(active_ent_quarterly_behavior, ['ehhn', 'quarter'], 'inner')
-                  .withColumn('visit_penetration', 
-                              f.round(f.col('visits') / f.col('enterprise_visits'), 4)
+                  .withColumn('unit_penetration', 
+                              f.round(f.col('units') / f.col('enterprise_units'), 4)
                              )
              )
     
@@ -689,12 +689,12 @@ def create_weighted_df(pillars_df, qtr_weights_df, spend_thresholds = (.5, .9), 
     medium_visits_cutoff = visit_thresholds[0]
     
     spend_window = Window.partitionBy('quarter').orderBy('sales')
-    penetration_window = Window.partitionBy('quarter').orderBy('visit_penetration')
+    penetration_window = Window.partitionBy('quarter').orderBy('unit_penetration')
     
     weighted_df = (pillars_df
                        .withColumn(f'spend_percentile', f.percent_rank().over(spend_window))
                        .withColumn(f'penetration_percentile', 
-                                   f.when(f.col(f'visit_penetration') == 1, 1)
+                                   f.when(f.col(f'unit_penetration') == 1, 1)
                                     .otherwise(f.percent_rank().over(penetration_window))
                                   )
                    
@@ -769,7 +769,7 @@ def create_weighted_segs(weighted_df):
 
 # COMMAND ----------
 
-modality_list_nonship = ['ketogenic','paleo', 'vegan'] #
+modality_list_nonship = ['ketogenic'] #,'paleo', 'vegan'
 
 for modality_name in modality_list_nonship:
     embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
@@ -797,7 +797,7 @@ for modality_name in modality_list_nonship:
     quarters_df = pull_quarters_for_year(acds, start_week, end_week)
 
     active_modality_kpis = (pull_vintages_df(acds, modality_name, start_week, end_week, 'sales')
-                                .select('ehhn', 'fiscal_week', 'weekly_sales', 'weekly_visits')
+                                .select('ehhn', 'fiscal_week', 'weekly_sales', 'weekly_visits', 'weekly_units')
                           )
     # determine who is H/M/L eligible, and who is inactive
     active_hhs_df = pull_active_hhs(active_modality_kpis, start_week, end_week, quarters_df)
@@ -810,7 +810,7 @@ for modality_name in modality_list_nonship:
 
     active_ent_quarterly_behavior = pull_ent_quarterly_behavior(acds, start_week, end_week, quarters_df)
 
-    # calling it pillars because it has data for spend and visit penetration (both of the pillars towards overall funlo)
+    # calling it pillars because it has data for spend and unit penetration (both of the pillars towards overall funlo)
     pillars_df = (combine_pillars(active_hml_kpis, active_ent_quarterly_behavior)
                       # left join because we want to include households without a preferred store
                       # we've already excluded bad divisions above (e.g. harris teeter - "097")
@@ -826,7 +826,7 @@ for modality_name in modality_list_nonship:
 
     column_order = ["ehhn", "modality", "end_week", "stratum_week", "quarter", 
                                   "sales", "spend_percentile", "spend_rank",
-                                  "visits", "enterprise_visits", "visit_penetration", "penetration_percentile", "penetration_rank", 
+                                  "visits", "enterprise_visits", "unit_penetration", "penetration_percentile", "penetration_rank", 
                                   "quarter_points", "weight", "recency_adjusted_quarter_points"]
 
     print(weights_filepath)
@@ -868,7 +868,3 @@ for modality_name in modality_list_nonship:
         stratum_week = stratum_week,
         column_order = column_order
     )   
-
-# COMMAND ----------
-
-

@@ -70,7 +70,7 @@ duration_time = (today_time + relativedelta(weeks=52))
 iso_start_date = today_time.isoformat()
 iso_end_date = duration_time.isoformat()
 
-embedding_queries = ['paleo', 'vegan', 'ketogenic']
+embedding_queries = ['paleo', 'vegan', 'ketogenic', 'vegetarian']
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
 # the directory_structure.  

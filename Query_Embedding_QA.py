@@ -276,10 +276,43 @@ kpi.get_aggregate(
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
  pinto_scores_uc_diet_reshaped = pinto_scores_uc_dietList.groupby(['upc']).pivot(pinto_attribute).agg(count(lit(1))).na.fill(0) \
         .select('upc', pinto_name) \
         .withColumn('upc', lpad('upc', 13, '0'))
+
+# COMMAND ----------
+
+#ketogenic counts
+hml_weighted_df.groupBy(hml_weighted_df.spend_rank, hml_weighted_df.penetration_rank).count().display()
+
+# COMMAND ----------
+
+hml_weighted_df.groupBy(hml_weighted_df.spend_rank, hml_weighted_df.penetration_rank).count().display()
+
+# COMMAND ----------
+
+final_segs = (spark.read.format("delta").load(segment_filepath)
+                  .filter(f.col('modality') == 'ketogenic')
+                  .filter(f.col('stratum_week') == stratum_week)
+             )what_weights_looklike = spark.read.format("delta").load(weights_filepath + '/modality=ketogenic/stratum_week=20230501')
+hml_weighted_df.display()
+final_segs.join(hml_weighted_df, final_segs.ehhn == hml_weighted_df.ehhn).where(final_segs.segment == 'H').display()
+final_segs.groupBy(final_segs.segment).count().display()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Household behavior
+
+# COMMAND ----------
+
+vegan_segmentation_path = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality=vegan/stratum_week=20230503/" 
+vegan_segmentation = spark.read.format("delta").load(vegan_segmentation_path)
+
+# COMMAND ----------
+
+vegan_segmentation.groupBy(vegan_segmentation.segment).count().display()
+
+# COMMAND ----------
+
+

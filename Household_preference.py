@@ -56,6 +56,31 @@ spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.c
 
 # COMMAND ----------
 
+#Define service principals
+service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-pw')
+service_application_id = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-app-id')
+directory_id = "5f9dc6bd-f38a-454a-864c-c803691193c5"
+storage_account = 'sa8451camprd'
+
+# COMMAND ----------
+
+#Set configurations
+spark.conf.set(f"fs.azure.account.auth.type.{storage_account}.dfs.core.windows.net", "OAuth")
+spark.conf.set(f"fs.azure.account.oauth.provider.type.{storage_account}.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+spark.conf.set(f"fs.azure.account.oauth2.client.id.{storage_account}.dfs.core.windows.net", service_application_id)
+spark.conf.set(f"fs.azure.account.oauth2.client.secret.{storage_account}.dfs.core.windows.net", service_credential)
+spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.core.windows.net", f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
+
+# COMMAND ----------
+
+mda = spark.read.parquet('abfss://measure@sa8451camprd.dfs.core.windows.net/dashboard/campaign/version=v2')
+
+# COMMAND ----------
+
+mda.display()
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC #### Define product data paths to join with to understand products being returned by query embeddings.  
 
@@ -144,7 +169,7 @@ acds_previous_year_transactions = acds.get_transactions(today_year_ago, today, a
 acds_previous_year_transactions = acds_previous_year_transactions.where(acds_previous_year_transactions.scn_unt_qy > 0)
 
 #can loop through vector list here
-vectors_path = upc_list_path + 'diet_ketogenic'
+vectors_path = upc_list_path + 'ketogenic'
 vectors_path = spark.read.parquet(vectors_path)
 
 from pyspark.sql.window import Window
@@ -158,7 +183,7 @@ acds_previous_year_transactions_with_vectors = vectors_path.join(acds_previous_y
 # COMMAND ----------
 
 acds_previous_year_transactions_with_vectors = acds_previous_year_transactions_with_vectors.where(acds_previous_year_transactions_with_vectors.scn_unt_qy > 0)
-#acds_previous_year_transactions.where(acds_previous_year_transactions.ehhn == '103852348').display()
+acds_previous_year_transactions.where(acds_previous_year_transactions.ehhn == '103852348').display()
 
 # COMMAND ----------
 
@@ -219,15 +244,90 @@ NormalizedPreference.where(NormalizedPreference.NormalizedPreference > 10).count
 # COMMAND ----------
 
 vectors_total_units = kpi.get_aggregate(
-    start_date=today_year_ago,
-    end_date=today,
-    metrics=['units'],
-    filter_by=Sifter(vectors_sold_last_year, join_cond=Equality("gtin_no"), method="include")
+    start_date='20220102',
+    end_date='20220212',
+    metrics = ["sales","gr_visits","units"],
+    join_with = 'stores', #need this to use geo
+    apply_golden_rules = golden_rules(), #will need to remove store exclusions GR for Ocado and Ship (Vitacost as Division). this by default will include ["011","014","016","018","021","024","025","026","029","034","035","105","531","534","615","620","660","701","703","705","706"] per https://github.8451.com/FoundationalComponents/GoldenRules/blob/master/Store_Exclusions.md
+    group_by = ["ehhn","trn_dt","geo_div_no"],
+    query_filters=[
+        "ehhn == '99898545' "]
 )
+
 
 # COMMAND ----------
 
 vectors_total_units.display()
+
+# COMMAND ----------
+
+dane_renata_total_units = kpi.get_aggregate(
+    start_date='20230101',
+    end_date='20231231',
+    metrics = ['last_sold_date',
+ 'sales',
+ 'gross_sales',
+ 'units',
+ 'visits',
+ 'gr_visits',
+ 'sales_per_visit',
+ 'units_per_visit',
+ 'sales_per_unit',
+ 'product_count',
+ 'stores_selling',
+ 'sales_per_store',
+ 'units_per_store',
+ 'kroger_coupon_discount_sales',
+ 'kroger_coupon_discount_units',
+ 'kroger_match_coupon_discount_sales',
+ 'kroger_match_coupon_discount_units',
+ 'vendor_discount_sales',
+ 'vendor_discount_units',
+ 'retailer_loyalty_discount_sales',
+ 'retailer_loyalty_discount_units',
+ 'total_discount_sales',
+ 'total_discount_units'],
+    query_filters=[
+        "ehhn == '10933600025' "]
+)
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Dane and Renata's Kroger sales for 2022 and contribution to Steven's bonus :)
+
+# COMMAND ----------
+
+dane_renata_total_units.display()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Dane and Renata's Kroger sales for 2023 and contribution to Steven's bonus :)
+
+# COMMAND ----------
+
+dane_renata_total_units.display()
+
+# COMMAND ----------
+
+last_week_keto = spark.read.parquet('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions/customer_data_assets/vintages/sales_ketogenic/fiscal_week=20230404')
+last_week_keto.display()
+
+# COMMAND ----------
+
+txns_daily = acds.get_transactions(start_date='20230518', end_date="20230525")
+
+
+# COMMAND ----------
+
+txns_340764942 = txns_daily.where(txns_daily.ehhn == '340764942')
+txns_340764942.display()
+
+# COMMAND ----------
+
+txns_340764942.join(vectors_path, txns_340764942.gtin_no == vectors_path.gtin_no).display()
 
 # COMMAND ----------
 
