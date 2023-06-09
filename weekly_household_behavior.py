@@ -769,7 +769,7 @@ def create_weighted_segs(weighted_df):
 
 # COMMAND ----------
 
-modality_list_nonship = ['ketogenic'] #,'paleo', 'vegan'
+modality_list_nonship = ['ketogenic', 'paleo', 'vegan']
 
 for modality_name in modality_list_nonship:
     embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
