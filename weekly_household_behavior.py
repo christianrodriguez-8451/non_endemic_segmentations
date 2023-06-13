@@ -337,7 +337,7 @@ def pull_vintages_df(acds,
     `vintage_df` - spark DF of requested modality on requested time at either HH or KPI level
     '''
     
-    if modality not in ["ketogenic", "enterprise", "vegan", "paleo"]:
+    if modality not in ["ketogenic", "enterprise", "vegan", "paleo", "vegetarian"]:
         raise ValueError(f'`modality` must be one of "ketogenic", "vegan", "paleo" or "enterprise".')
     
     if vintage_type == 'sales':
@@ -770,6 +770,7 @@ def create_weighted_segs(weighted_df):
 # COMMAND ----------
 
 modality_list_nonship = ['ketogenic', 'paleo', 'vegan', 'vegetarian']
+#spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled","true")
 
 for modality_name in modality_list_nonship:
     embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
@@ -826,7 +827,7 @@ for modality_name in modality_list_nonship:
 
     column_order = ["ehhn", "modality", "end_week", "stratum_week", "quarter", 
                                   "sales", "spend_percentile", "spend_rank",
-                                  "visits", "enterprise_visits", "unit_penetration", "penetration_percentile", "penetration_rank", 
+                                  "units", "enterprise_units", "unit_penetration", "penetration_percentile", "penetration_rank", 
                                   "quarter_points", "weight", "recency_adjusted_quarter_points"]
 
     print(weights_filepath)
@@ -868,3 +869,7 @@ for modality_name in modality_list_nonship:
         stratum_week = stratum_week,
         column_order = column_order
     )   
+
+# COMMAND ----------
+
+#Accelerate queries with Delta: This query contains a highly selective filter. To improve the performance of queries, convert the table to Delta and run the OPTIMIZE ZORDER BY command on the table abfss:REDACTED_LOCAL_PART@sa8451posprd.dfs.core.windows.net/calendar/current. Learn more
