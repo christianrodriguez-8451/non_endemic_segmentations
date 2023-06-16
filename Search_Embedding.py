@@ -70,7 +70,16 @@ duration_time = (today_time + relativedelta(weeks=52))
 iso_start_date = today_time.isoformat()
 iso_end_date = duration_time.isoformat()
 
-embedding_queries = ['paleo', 'vegan', 'ketogenic', 'vegetarian', 'free from gluten', 'lactose free']
+product_vectors_dir = '/product_vectors_diet_description/cycle_date='
+diet_query_dir = '/diet_query_embeddings'
+
+# Set path for product vectors
+upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_query_dir) 
+diet_query_embeddings_directories = spark.createDataFrame(list(dbutils.fs.ls(upc_list_path)))
+diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.map(lambda column: column.name).collect()
+
+dbutils.widgets.text("embedding_query", "")
+embedding_query = dbutils.widgets.get("embedding_query")
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
 # the directory_structure.  
@@ -79,6 +88,11 @@ embedding_queries = ['paleo', 'vegan', 'ketogenic', 'vegetarian', 'free from glu
 #'KOSHER', 'Lactose free', 'Low calorie', 'Low FODMAP', 'Low protein', 'Low salt', 'MACROBIOTIC', 'Mediterranean Diet', \
 #'METABOLIC', 'NON_VEG', 'PALEO', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', 'VEGAN', \
 #'VEGETARIAN', 'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
+
+if embedding_query != '':
+  embedding_queries = embedding_query.lower()
+else:
+  embedding_queries = diet_query_embeddings_directories_list
 
 
 # COMMAND ----------
@@ -122,6 +136,7 @@ for query in embedding_queries:
   query_vector = model.encode(query, normalize_embeddings = True).tolist()
   search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
   query = query.replace(' ', '_')
+  query = query.replace('/', '')
   search_df.write.mode("overwrite").format("delta").save(diet_query_embeddings_dir + today + '/' + query)
   json_payload = create_upc_json(search_df, query)
   rdd = spark.sparkContext.parallelize([json_payload])
@@ -129,6 +144,10 @@ for query in embedding_queries:
   df2.coalesce(1).write.mode("overwrite").json(diet_upcs_dir + today + '/' + query)
   file_to_copy = get_latest_modified_directory(diet_upcs_dir + today + '/' + query)
   dbutils.fs.cp(file_to_copy, egress_dir +'/' + query + '_' + today + '.json')
+
+# COMMAND ----------
+
+dbutils.notebook.exit("Search_Embedding completed")
 
 # COMMAND ----------
 
