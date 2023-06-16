@@ -104,10 +104,12 @@ vintages_dir = '/customer_data_assets/vintages'
 # Set path for product vectors
 upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_query_dir) 
 
-
 # COMMAND ----------
 
-modality_list_nonship = ['ketogenic', 'paleo', 'vegan', 'enterprise', 'vegetarian'] # 
+diet_query_vintages_directories = spark.createDataFrame(list(dbutils.fs.ls(embedded_dimensions_dir + vintages_dir)))
+diet_query_vintages_directories = diet_query_vintages_directories.filter(diet_query_vintages_directories.name.like('sales_%'))
+diet_query_vintages_directories = diet_query_vintages_directories.rdd.map(lambda column: column.name).collect()
+modality_list_nonship = diet_query_vintages_directories
 fw = get_fw(1)
 start_date = get_start_date(1)
 end_date = get_end_date(1)
@@ -115,7 +117,8 @@ end_date = get_end_date(1)
 # COMMAND ----------
 
 for modality_name in modality_list_nonship: 
-
+    modality_name = modality_name.replace('sales_', '')
+    modality_name = modality_name.replace('/', '')
     #Pull existing vintage hh and sales data for the modality
     og_hh_vintage = spark.read.parquet(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}').where(f.col('vintage_week')<fw)
     og_trans_agg_vintage = spark.read.parquet(f'{embedded_dimensions_dir}{vintages_dir}/sales_{modality_name}').where(f.col('fiscal_week')<fw)

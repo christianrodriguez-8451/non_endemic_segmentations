@@ -70,7 +70,7 @@ duration_time = (today_time + relativedelta(weeks=52))
 iso_start_date = today_time.isoformat()
 iso_end_date = duration_time.isoformat()
 
-embedding_queries = ['paleo', 'vegan', 'ketogenic', 'vegetarian']
+embedding_queries = ['paleo', 'vegan', 'ketogenic', 'vegetarian', 'free from gluten', 'lactose free']
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
 # the directory_structure.  
@@ -121,6 +121,7 @@ for query in embedding_queries:
   # Encoding the query, make it a pyspark vector we can take the dot product of later
   query_vector = model.encode(query, normalize_embeddings = True).tolist()
   search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
+  query = query.replace(' ', '_')
   search_df.write.mode("overwrite").format("delta").save(diet_query_embeddings_dir + today + '/' + query)
   json_payload = create_upc_json(search_df, query)
   rdd = spark.sparkContext.parallelize([json_payload])
