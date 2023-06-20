@@ -90,10 +90,9 @@ embedding_query = dbutils.widgets.get("embedding_query")
 #'VEGETARIAN', 'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
 
 if embedding_query != '':
-  embedding_queries = embedding_query.lower()
+  embedding_queries = [embedding_query.lower()]
 else:
   embedding_queries = diet_query_embeddings_directories_list
-
 
 # COMMAND ----------
 
