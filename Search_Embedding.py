@@ -89,10 +89,6 @@ embedding_query = dbutils.widgets.get("embedding_query")
 #'METABOLIC', 'NON_VEG', 'PALEO', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', 'VEGAN', \
 #'VEGETARIAN', 'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
 
-if embedding_query != '':
-  embedding_queries = [embedding_query.lower()]
-else:
-  embedding_queries = diet_query_embeddings_directories_list
 
 # COMMAND ----------
 
@@ -130,24 +126,38 @@ def create_array_query(query_vector):
 
 # COMMAND ----------
 
-for query in embedding_queries:
-  # Encoding the query, make it a pyspark vector we can take the dot product of later
-  query_vector = model.encode(query, normalize_embeddings = True).tolist()
-  search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
-  query = query.replace(' ', '_')
-  query = query.replace('/', '')
-  search_df.write.mode("overwrite").format("delta").save(diet_query_embeddings_dir + today + '/' + query)
-  json_payload = create_upc_json(search_df, query)
-  rdd = spark.sparkContext.parallelize([json_payload])
-  df2 = spark.read.json(rdd)
-  df2.coalesce(1).write.mode("overwrite").json(diet_upcs_dir + today + '/' + query)
-  file_to_copy = get_latest_modified_directory(diet_upcs_dir + today + '/' + query)
-  dbutils.fs.cp(file_to_copy, egress_dir +'/' + query + '_' + today + '.json')
+
+if embedding_query != '':
+  embedding_queries = [embedding_query.lower()]
+  for query in embedding_queries:
+    # Encoding the query, make it a pyspark vector we can take the dot product of later
+    query_vector = model.encode(query, normalize_embeddings = True).tolist()
+    search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
+    query = query.replace(' ', '_')
+    query = query.replace('/', '')
+    search_df.write.mode("overwrite").format("delta").save(upc_list_path + query)
+    json_payload = create_upc_json(search_df, query)
+    rdd = spark.sparkContext.parallelize([json_payload])
+    df2 = spark.read.json(rdd)
+    df2.coalesce(1).write.mode("overwrite").json(diet_upcs_dir + today + '/' + query)
+    file_to_copy = get_latest_modified_directory(diet_upcs_dir + today + '/' + query)
+    dbutils.fs.cp(file_to_copy, egress_dir +'/' + query + '_' + today + '.json')
+else:
+  embedding_queries = diet_query_embeddings_directories_list
+  for query in embedding_queries:
+    # Encoding the query, make it a pyspark vector we can take the dot product of later
+    query_vector = model.encode(query, normalize_embeddings = True).tolist()
+    search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
+    query = query.replace(' ', '_')
+    query = query.replace('/', '')
+    search_df.write.mode("overwrite").format("delta").save(diet_query_embeddings_dir + today + '/' + query)
+    json_payload = create_upc_json(search_df, query)
+    rdd = spark.sparkContext.parallelize([json_payload])
+    df2 = spark.read.json(rdd)
+    df2.coalesce(1).write.mode("overwrite").json(diet_upcs_dir + today + '/' + query)
+    file_to_copy = get_latest_modified_directory(diet_upcs_dir + today + '/' + query)
+    dbutils.fs.cp(file_to_copy, egress_dir +'/' + query + '_' + today + '.json')
 
 # COMMAND ----------
 
 dbutils.notebook.exit("Search_Embedding completed")
-
-# COMMAND ----------
-
-
