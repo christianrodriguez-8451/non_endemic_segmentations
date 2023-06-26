@@ -80,14 +80,15 @@ diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.m
 
 dbutils.widgets.text("embedding_query", "")
 embedding_query = dbutils.widgets.get("embedding_query")
+embedding_query=embedding_query.split(",")
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
-# the directory_structure.  
-# ['AYERVEDIC', 'LOW BACTERIA', 'COELIAC', 'DIABETIC', 'Engine 2', 'FREE FROM GLUTEN', 'GLYCEMIC', 'Grain free', 'HALAL', \
-#'Healthy Eating', 'Healthy Pregnancy', 'Heart Friendly', 'HGC', 'High protein', 'KEHILLA', 'KETOGENIC', 'Kidney-Friendly', \
-#'KOSHER', 'Lactose free', 'Low calorie', 'Low FODMAP', 'Low protein', 'Low salt', 'MACROBIOTIC', 'Mediterranean Diet', \
-#'METABOLIC', 'NON_VEG', 'PALEO', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', 'VEGAN', \
-#'VEGETARIAN', 'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
+# 'FREE FROM GLUTEN', 'KETOGENIC', 'Lactose free', 'MACROBIOTIC', 'PALEO', 'VEGAN', 'VEGETARIAN', 'COELIAC', 
+# ['AYERVEDIC', 'LOW BACTERIA', 'DIABETIC', 'Engine 2',  'GLYCEMIC', 'Grain free', 'HALAL', \
+#'Healthy Eating', 'Healthy Pregnancy', 'Heart Friendly', 'HGC', 'High protein', 'KEHILLA', 'Kidney-Friendly', \
+#'KOSHER', 'Low calorie', 'Low FODMAP', 'Low protein', 'Low salt', 'Mediterranean Diet', \
+#'METABOLIC', 'NON_VEG', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', \
+#'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
 
 
 # COMMAND ----------
