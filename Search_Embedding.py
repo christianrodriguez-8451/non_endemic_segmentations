@@ -83,8 +83,8 @@ embedding_query = dbutils.widgets.get("embedding_query")
 embedding_query=embedding_query.split(",")
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
-# 'FREE FROM GLUTEN', 'KETOGENIC', 'Lactose free', 'MACROBIOTIC', 'PALEO', 'VEGAN', 'VEGETARIAN', 'COELIAC', 
-# ['AYERVEDIC', 'LOW BACTERIA', 'DIABETIC', 'Engine 2',  'GLYCEMIC', 'Grain free', 'HALAL', \
+# 'FREE FROM GLUTEN', 'KETOGENIC', 'Lactose free', 'MACROBIOTIC', 'PALEO', 'VEGAN', 'VEGETARIAN', 'COELIAC', 'AYERVEDIC', 'LOW BACTERIA', 'DIABETIC', 
+# ['Engine 2',  'GLYCEMIC', 'Grain free', 'HALAL', \
 #'Healthy Eating', 'Healthy Pregnancy', 'Heart Friendly', 'HGC', 'High protein', 'KEHILLA', 'Kidney-Friendly', \
 #'KOSHER', 'Low calorie', 'Low FODMAP', 'Low protein', 'Low salt', 'Mediterranean Diet', \
 #'METABOLIC', 'NON_VEG', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', \
@@ -129,8 +129,9 @@ def create_array_query(query_vector):
 
 
 if embedding_query != '':
-  embedding_queries = [embedding_query.lower()]
+  embedding_queries = [embedding_query]
   for query in embedding_queries:
+    query = query.lower()
     # Encoding the query, make it a pyspark vector we can take the dot product of later
     query_vector = model.encode(query, normalize_embeddings = True).tolist()
     search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
