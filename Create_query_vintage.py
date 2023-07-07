@@ -1,7 +1,6 @@
 # Databricks notebook source
 spark.conf.set("spark.sql.shuffle.partitions","auto")
 from pyspark.sql.functions import collect_list
-import os
 
 # COMMAND ----------
 
@@ -66,8 +65,14 @@ product_vectors_dir = '/product_vectors_diet_description/cycle_date='
 diet_query_dir = '/diet_query_embeddings'
 vintages_dir = '/customer_data_assets/vintages'
 
+dbutils.widgets.text("upc_list_path", "")
+upc_list_path = dbutils.widgets.get("upc_list_path")
+
 # Set path for product vectors
-upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_query_dir) 
+if upc_list_path != '':
+  upc_list_path = upc_list_path 
+else:
+  upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_query_dir) 
 diet_query_embeddings_directories = spark.createDataFrame(list(dbutils.fs.ls(upc_list_path)))
 diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.map(lambda column: column.name).collect()
 
@@ -79,8 +84,6 @@ from dateutil.relativedelta import relativedelta
 yesterday = date.today() - timedelta(days=1)
 today_year_ago = (yesterday - relativedelta(years=1)).strftime('%Y%m%d')
 today = datetime.today().strftime('%Y%m%d')
-
-
 
 # COMMAND ----------
 
@@ -162,7 +165,3 @@ for directory_name in diet_query_embeddings_directories_list:
       trans_agg_vintage = trans_agg.join(new_hh_vintage, 'ehhn', 'inner')
 
       trans_agg_vintage.coalesce(1).write.mode('overwrite').partitionBy('fiscal_week').parquet(embedded_dimensions_dir + vintages_dir + '/sales_' + modality_name)
-
-# COMMAND ----------
-
-

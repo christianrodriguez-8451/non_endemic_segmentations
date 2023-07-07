@@ -163,3 +163,16 @@ else:
 # COMMAND ----------
 
 dbutils.notebook.exit("Search_Embedding completed")
+
+# COMMAND ----------
+
+upc_vectors_path = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/commodity_segments/output/cycle_date=2023-07-07/artsy_folk_2023-07-07'
+upc_vectors_path = spark.read.format("delta").load(upc_vectors_path)
+
+# COMMAND ----------
+
+upc_vectors_path.display()
+
+# COMMAND ----------
+
+
