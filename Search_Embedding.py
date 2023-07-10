@@ -127,12 +127,10 @@ def create_array_query(query_vector):
 
 # COMMAND ----------
 
-print(embedding_query)
-if embedding_query != '':
+if not embedding_query:
   embedding_queries = [embedding_query]
   for query in embedding_queries:
     query = ''.join(query).lower()
-    print(query)
     # Encoding the query, make it a pyspark vector we can take the dot product of later
     query_vector = model.encode(query, normalize_embeddings = True).tolist()
     search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
