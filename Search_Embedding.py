@@ -131,7 +131,8 @@ def create_array_query(query_vector):
 if embedding_query != '':
   embedding_queries = [embedding_query]
   for query in embedding_queries:
-    query = query.lower()
+    query = ''.join(query).lower()
+    print(query)
     # Encoding the query, make it a pyspark vector we can take the dot product of later
     query_vector = model.encode(query, normalize_embeddings = True).tolist()
     search_df = create_search_df(create_dot_df(product_vectors_df, create_array_query(query_vector)))
@@ -163,16 +164,3 @@ else:
 # COMMAND ----------
 
 dbutils.notebook.exit("Search_Embedding completed")
-
-# COMMAND ----------
-
-upc_vectors_path = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/commodity_segments/output/cycle_date=2023-07-07/artsy_folk_2023-07-07'
-upc_vectors_path = spark.read.format("delta").load(upc_vectors_path)
-
-# COMMAND ----------
-
-upc_vectors_path.display()
-
-# COMMAND ----------
-
-
