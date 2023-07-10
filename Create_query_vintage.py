@@ -1,6 +1,7 @@
 # Databricks notebook source
 spark.conf.set("spark.sql.shuffle.partitions","auto")
 from pyspark.sql.functions import collect_list
+from pathlib import Path
 
 # COMMAND ----------
 
@@ -70,11 +71,11 @@ upc_list_path = dbutils.widgets.get("upc_list_path")
 
 # Set path for product vectors
 if upc_list_path != '':
-  upc_list_path = upc_list_path 
+  diet_query_embeddings_directories_list = [Path(upc_list_path).parts[-1]]
 else:
   upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_query_dir) 
-diet_query_embeddings_directories = spark.createDataFrame(list(dbutils.fs.ls(upc_list_path)))
-diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.map(lambda column: column.name).collect()
+  diet_query_embeddings_directories = spark.createDataFrame(list(dbutils.fs.ls(upc_list_path)))
+  diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.map(lambda column: column.name).collect()
 
 # get current datetime
 from datetime import datetime, date, timedelta
@@ -92,8 +93,6 @@ from kpi_metrics import KPI
 import pyspark.sql.functions as f
 
 # COMMAND ----------
-
-
 
 ##I will have 3 append process files
 #IPD = Instore, Pickup or Delivery. The KPI aggregate query will filter based on the modality field, all Golden Rules will apply
