@@ -127,7 +127,7 @@ def create_array_query(query_vector):
 
 # COMMAND ----------
 
-
+print(embedding_query)
 if embedding_query != '':
   embedding_queries = [embedding_query]
   for query in embedding_queries:
