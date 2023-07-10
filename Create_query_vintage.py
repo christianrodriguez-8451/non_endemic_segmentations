@@ -107,7 +107,12 @@ for directory_name in diet_query_embeddings_directories_list:
     except:
       print(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name + " doesn't exist and needs to be created")
       directory_name = directory_name.replace('/', '')
-      upc_vectors_path = upc_list_path + directory_name
+
+      if upc_list_path != '':
+        upc_vectors_path = upc_list_path
+      else:
+        upc_vectors_path = upc_list_path + directory_name
+        
       upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
       
       fiscal_st_dt = today_year_ago
