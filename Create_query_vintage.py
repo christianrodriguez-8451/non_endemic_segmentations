@@ -113,11 +113,11 @@ for directory_name in diet_query_embeddings_directories_list:
       if upc_list_path != '':
         upc_vectors_path = upc_list_path
         ##write look up file of upc list location 
-        upc_list_path_lookup.write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + 'upc_list_path_lookup')
+        upc_list_path_lookup.write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup')
       else:
         upc_vectors_path = upc_list_path + directory_name
         ##write look up file of upc list location 
-        upc_list_path_lookup.select(upc_list_path_lookup.path,upc_list_path_lookup.name).where(upc_list_path_lookup.name == directory_name).write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + 'upc_list_path_lookup')     
+        upc_list_path_lookup.select(upc_list_path_lookup.path,upc_list_path_lookup.name).where(upc_list_path_lookup.name == directory_name).write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup')     
         
       upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
       
