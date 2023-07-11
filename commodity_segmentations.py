@@ -1,11 +1,26 @@
 # Databricks notebook source
+"""
+Reads in the commodity-segments control file and pulls in a year of the most recent
+year of transaction data via ACDS. For each segmentation listed in the control file, a list
+of UPCs (gtin_no) is created by pulling from ACDS all the UPCs that fall under the
+given commodities and sub-commodities. PID is utilized to designate every UPC their
+commodity and sub-commodity label. The final output is a delta file with gtin_no
+as the only column.
+
+Notes
+  The control file is a comma separated file that contains the following
+  columns: segmentation, commodities, sub-commodities, and weeks.
+"""
+
+# COMMAND ----------
+
 #When you use a job to run your notebook, you will need the service principles
 #You only need to define what storage accounts you are using
+
 #Define service principals
 service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-pw')
 service_application_id = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-app-id')
 directory_id = "5f9dc6bd-f38a-454a-864c-c803691193c5"
-#storage_account = 'sa8451entlakegrnprd'
 #storage_account = 'sa8451dbxadhocprd'
 storage_account = 'sa8451posprd'
 
@@ -18,21 +33,20 @@ spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.c
 
 # COMMAND ----------
 
+import config as con
 import dateutil.relativedelta as dr
 import datetime as dt
 from effodata import ACDS, golden_rules
 import pyspark.sql.functions as f
 import pandas as pd
 
-#Read in your control file (for each segment, specifies which commodities + sub-commodities it is made of)
-comm_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/commodity_segments'
-con_fn = "commodity_segments_control.csv"
-con_fp = comm_dir + "/" + con_fn
+#Read in your control file (for each segment, specifies which commodities and sub-commodities it is made of)
+con_fp = con.control_fp
 segments_df = spark.read.csv(con_fp, sep=",", header=True)
 segments_df = segments_df.toPandas()
 segments_df = segments_df.loc[~segments_df["segmentation"].isna(), :]
 
-#Turn control file into dictionary for easier handling
+#Process control file into dictionary for easier handling
 segments_dict = {}
 for n in range(0, len(list(segments_df["segmentation"]))):
   
@@ -79,13 +93,6 @@ last_monday = today - dr.datetime.timedelta(days=today.weekday())
 start_date = last_monday - dr.datetime.timedelta(weeks=max_weeks)
 end_date = last_monday - dr.datetime.timedelta(days=1)
 
-#ACDS2 = used to extract household counts
-acds2 = ACDS(use_sample_mart=False)
-acds2 = acds2.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
-acds2 = acds2.select("gtin_no", "ehhn")
-acds2 = acds2.dropDuplicates()
-acds2.cache()
-
 #Pull in transaction data
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
@@ -111,10 +118,10 @@ pid = pid.select("gtin_no", "commodity_desc", "sub_commodity_desc")
 pid = pid.dropDuplicates(["gtin_no"])
 acds = acds.join(pid, on="gtin_no", how="inner")
 
-#Filter for only the relevant commodities + sub-commodities to keep the dataframe small
+#Filter for only the relevant commodities and sub-commodities to keep the dataframe small
 my_comms = []
 my_subs = []
-for s in segments_dict:
+for s in list(segments_dict.keys()):
   my_comms += segments_dict[s]["commodities"]
   my_subs += segments_dict[s]["sub_commodities"]
 
@@ -124,6 +131,7 @@ all_gtins = acds.filter((acds["commodity_desc"].isin(my_comms)) | (acds["sub_com
 all_gtins.cache()
 del(my_comms, my_subs)
 
+#Create the UPC list for each segmentation in the control file
 for s in list(segments_dict.keys()):
   #Un-pack the parameters for the given segment
   my_dict = segments_dict[s]
@@ -131,46 +139,45 @@ for s in list(segments_dict.keys()):
   sub_comms = my_dict["sub_commodities"]
   n_weeks = my_dict["weeks"]
 
-  #Filter only on the commodities + sub-commodities relevant to the given segment
+  #Filter only on the commodities and sub-commodities relevant to the given segment
   segment_gtins = all_gtins.filter((all_gtins["commodity_desc"].isin(comms)) | (all_gtins["sub_commodity_desc"].isin(sub_comms)))
   segment_gtins = segment_gtins.filter(segment_gtins["week"] <= n_weeks)
   segment_gtins = segment_gtins.select("gtin_no")
   segment_gtins = segment_gtins.dropDuplicates()
-
+  segment_gtins.cache()
+  
   #Write-out the file
   cyc_date = dt.date.today().strftime('%Y-%m-%d')
-  output_dir = comm_dir + "/" + "output" + "/" + "cycle_date={}".format(cyc_date)
-  if not ("cycle_date={}".format(cyc_date) in list(dbutils.fs.ls(comm_dir + "/" + "output"))):
+  cyc_date = "cycle_date={}".format(cyc_date)
+  output_dir = con.output_fp + cyc_date
+  if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
     dbutils.fs.mkdirs(output_dir)
 
-  output_fn = "{}_{}".format(s, cyc_date)
-  output_fp =  output_dir + "/" + output_fn
+  output_fp =  output_dir + s
   segment_gtins.write.mode("overwrite").format("delta").save(output_fp)
-  segment_gtins.cache()
 
   #The egress directory where the files are FTP'd from Azure to On-Premise
-  embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
-  egress_dir = embedded_dimensions_dir + '/egress/upc_list'
+  #embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
+  #egress_dir = embedded_dimensions_dir + '/egress/upc_list'
+
+  #print(cyc_date)
+  #print(start_date)
+  #print(end_date)
 
   #Used to process the UPC list into a format that the engineering team can take in
-  def create_upc_json(df, query):
-    from pyspark.sql.functions import collect_list
-    upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
-    upc_string = '","'.join(upc_list)
+  #def create_upc_json(df, query):
+  #  from pyspark.sql.functions import collect_list
+  #  upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
+  #  upc_string = '","'.join(upc_list)
     
-    upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ str(start_date) +'","endDate":"'+ str(end_date) +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"'+ query +'","description":"Buyers of '+ query +' products."}'
-    return upc_format
+  #  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ str(start_date) +'","endDate":"'+ str(end_date) +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"'+ query +'","description":"Buyers of '+ query +' products."}'
+  #  return upc_format
 
   #Copy the file from outputted location to egress pick-up location
-  json_payload = create_upc_json(segment_gtins, s)
-  rdd = spark.sparkContext.parallelize([json_payload])
-  df = spark.read.json(rdd)
+  #json_payload = create_upc_json(segment_gtins, s)
+  #rdd = spark.sparkContext.parallelize([json_payload])
+  #df = spark.read.json(rdd)
   #df.coalesce(1).write.mode("overwrite").json(output_fp)
   #dbutils.fs.cp(output_fp, egress_dir +'/' + output_fn + '.json')
-
-  #print(segment_gtins.show(5, truncate=False))
-  hh_count = acds2.join(segment_gtins, on="gtin_no", how="inner")
-  hh_count = hh_count.count()
-  print("{} - household count {}!".format(s, hh_count))
-
+  
   del(comms, sub_comms, n_weeks, segment_gtins)
