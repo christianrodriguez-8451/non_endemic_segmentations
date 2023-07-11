@@ -72,9 +72,12 @@ upc_list_path = dbutils.widgets.get("upc_list_path")
 # Set path for product vectors
 if upc_list_path != '':
   diet_query_embeddings_directories_list = [Path(upc_list_path).parts[-1]]
+  data = [{"path": upc_list_path}]
+  upc_list_path_lookup = spark.createDataFrame(data)
 else:
   upc_list_path = get_latest_modified_directory(embedded_dimensions_dir + diet_query_dir) 
   diet_query_embeddings_directories = spark.createDataFrame(list(dbutils.fs.ls(upc_list_path)))
+  upc_list_path_lookup = spark.createDataFrame(list(dbutils.fs.ls(upc_list_path)))
   diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.map(lambda column: column.name).collect()
 
 # get current datetime
@@ -106,15 +109,20 @@ for directory_name in diet_query_embeddings_directories_list:
       print(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name + "exists and DOESN'T need to be created")
     except:
       print(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name + " doesn't exist and needs to be created")
-      directory_name = directory_name.replace('/', '')
-
+      
       if upc_list_path != '':
         upc_vectors_path = upc_list_path
+        ##write look up file of upc list location 
+        upc_list_path_lookup.write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + 'upc_list_path_lookup')
       else:
         upc_vectors_path = upc_list_path + directory_name
+        ##write look up file of upc list location 
+        upc_list_path_lookup.select(upc_list_path_lookup.path,upc_list_path_lookup.name).where(upc_list_path_lookup.name == directory_name).write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + 'upc_list_path_lookup')     
         
       upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
       
+      directory_name = directory_name.replace('/', '')
+
       fiscal_st_dt = today_year_ago
       fiscal_end_dt = today 
       modality_acds = directory_name 
@@ -164,7 +172,7 @@ for directory_name in diet_query_embeddings_directories_list:
 
       #tried making this an overwrite but then it deleted all weeks and overwrites the entire folder
       hh_vintage.coalesce(1).write.mode('overwrite').partitionBy('vintage_week').parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name)
-
+      
       new_hh_vintage = spark.read.parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name)
       trans_agg_vintage = trans_agg.join(new_hh_vintage, 'ehhn', 'inner')
 
