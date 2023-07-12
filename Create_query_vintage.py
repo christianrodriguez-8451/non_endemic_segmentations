@@ -177,7 +177,7 @@ for directory_name in diet_query_embeddings_directories_list:
         directory_name_slash = directory_name + '/'
         upc_list_path_lookup.select(upc_list_path_lookup.path,upc_list_path_lookup.name).where(upc_list_path_lookup.name == directory_name_slash).write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup') 
       
-      new_hh_vintage = spark.read.parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name)
+      new_hh_vintage = spark.read.parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name + '/vintage_week=*')
       trans_agg_vintage = trans_agg.join(new_hh_vintage, 'ehhn', 'inner')
 
       trans_agg_vintage.coalesce(1).write.mode('overwrite').partitionBy('fiscal_week').parquet(embedded_dimensions_dir + vintages_dir + '/sales_' + modality_name)
