@@ -67,7 +67,7 @@ diet_query_dir = '/diet_query_embeddings'
 vintages_dir = '/customer_data_assets/vintages'
 
 dbutils.widgets.text("upc_list_path_api", "")
-upc_list_path = dbutils.widgets.get("upc_list_path_api")
+upc_list_path_api = dbutils.widgets.get("upc_list_path_api")
 
 # Set path for product vectors
 if upc_list_path_api:
