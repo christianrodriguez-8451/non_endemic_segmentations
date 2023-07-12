@@ -10,7 +10,7 @@ sub-commodity level.
 
 To Do:
   Write out the final output as a single excel workbook instead of two
-  pipe delimtiedn files. Doing so will streamline the process.
+  pipe delimited files. Doing so will streamline the process.
 
   For the product samples column, consider using PIM instead of PID to
   get around the 20 character limit for product names.
@@ -151,6 +151,7 @@ print(subcomm_hh_counts.count())
 import config as con
 from pyspark.sql.window import Window
 from pyspark.sql.functions import col, row_number, lit, collect_list, split, substring, explode, concat_ws
+import pandas as pd
 
 #Read in PID and only keep the necessary columns
 stub_path = "abfss://acds@sa8451posprd.dfs.core.windows.net/product/current/"
@@ -164,6 +165,8 @@ n = 100
 #How many product samples to pull per commodity/sub-commodity
 s = 20
 
+output_fp = con.hh_counts_fp + "household_counts_2022.xlsx"
+writer = pd.ExcelWriter(output_fp)
 #For both commodities and sub-commodities
 for comm in [["commodity", comm_hh_counts], ["sub_commodity", subcomm_hh_counts]]:
   column = comm[0]
@@ -193,14 +196,21 @@ for comm in [["commodity", comm_hh_counts], ["sub_commodity", subcomm_hh_counts]
   hh_counts = comm[1]
   hh_counts = hh_counts.join(desc_data, on=column, how="inner")
 
+  hh_counts = hh_counts.to
+  hh_counts.to_excel(writer, sheet_name=column)
+
   #Write out as a consolidate pipe delimited file
-  save_location= con.hh_counts_fp
-  csv_location = save_location+"temp.folder"
-  file_location = save_location + column + '_data_' + year + '.pipe'
+  #save_location= con.hh_counts_fp
+  #csv_location = save_location+"temp.folder"
+  #file_location = save_location + column + '_data_' + year + '.pipe'
 
-  hh_counts.repartition(1).write.csv(path=csv_location, mode="overwrite", header=True, sep="|")
+  #hh_counts.repartition(1).write.csv(path=csv_location, mode="overwrite", header=True, sep="|")
 
-  my_file = dbutils.fs.ls(csv_location)[-1].path
-  dbutils.fs.cp(my_file, file_location)
-  dbutils.fs.rm(csv_location, recurse=True)
+  #my_file = dbutils.fs.ls(csv_location)[-1].path
+  #dbutils.fs.cp(my_file, file_location)
+  #dbutils.fs.rm(csv_location, recurse=True)
+
+
+# COMMAND ----------
+
 
