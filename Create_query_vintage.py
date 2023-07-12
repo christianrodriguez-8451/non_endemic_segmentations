@@ -70,7 +70,7 @@ dbutils.widgets.text("upc_list_path", "")
 upc_list_path = dbutils.widgets.get("upc_list_path")
 
 # Set path for product vectors
-if upc_list_path != '':
+if upc_list_path:
   diet_query_embeddings_directories_list = [Path(upc_list_path).parts[-1]]
   data = [{"path": upc_list_path}]
   upc_list_path_lookup = spark.createDataFrame(data)
@@ -110,7 +110,7 @@ for directory_name in diet_query_embeddings_directories_list:
     except:
       print(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name + " doesn't exist and needs to be created")
       
-      if upc_list_path != '':
+      if upc_list_path:
         upc_vectors_path = upc_list_path
       else:
         upc_vectors_path = upc_list_path + directory_name   
@@ -169,7 +169,7 @@ for directory_name in diet_query_embeddings_directories_list:
       #tried making this an overwrite but then it deleted all weeks and overwrites the entire folder
       hh_vintage.coalesce(1).write.mode('overwrite').partitionBy('vintage_week').parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name)
 
-      if upc_list_path != '':
+      if upc_list_path:
         ##write look up file of upc list location 
         upc_list_path_lookup.write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup')
       else:
