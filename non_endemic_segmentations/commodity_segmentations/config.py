@@ -1,6 +1,7 @@
 #Proposal - at storage account sa8451dbxadhocprd and storage container media, let us create
 #a new directory called non_endemic_segmentations. Inside of it, we can put commodity_segments and embedded_dimensions.
 #That way, all the non-endemic processes live in the save neighborhood.
+#Proposal - create prd, tst, and dev directories on Azure to facilitate easy testing + development
 
 #Location of segmentations control file live in production
 control_fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/commodity_segments/commodity_segments_control.csv"
