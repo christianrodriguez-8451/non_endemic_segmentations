@@ -81,6 +81,7 @@ diet_query_embeddings_directories_list = diet_query_embeddings_directories.rdd.m
 dbutils.widgets.text("embedding_query", "")
 embedding_query = dbutils.widgets.get("embedding_query")
 embedding_query= embedding_query.split(",")
+res = any(len(ele) == 0 for ele in embedding_query)
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
 # 'FREE FROM GLUTEN', 'KETOGENIC', 'Lactose free', 'MACROBIOTIC', 'PALEO', 'VEGAN', 'VEGETARIAN', 'COELIAC', 'AYERVEDIC', 'LOW BACTERIA', 'DIABETIC', 
@@ -127,7 +128,7 @@ def create_array_query(query_vector):
 
 # COMMAND ----------
 
-if embedding_query:
+if not res:
   for query in embedding_query:
     query = ''.join(query).lower()
     # Encoding the query, make it a pyspark vector we can take the dot product of later
