@@ -337,8 +337,8 @@ def pull_vintages_df(acds,
     `vintage_df` - spark DF of requested modality on requested time at either HH or KPI level
     '''
     
-    if modality not in ["ketogenic", "enterprise", "vegan", "paleo", "vegetarian"]:
-        raise ValueError(f'`modality` must be one of "ketogenic", "vegan", "paleo" or "enterprise".')
+    #if modality not in ["ketogenic", "enterprise", "vegan", "paleo", "vegetarian"]:
+    #    raise ValueError(f'`modality` must be one of "ketogenic", "vegan", "paleo" or "enterprise".')
     
     if vintage_type == 'sales':
         filter_col = 'fiscal_week'
