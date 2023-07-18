@@ -120,18 +120,6 @@ for modality_name in modality_list_nonship:
     #Pull existing vintage hh and sales data for the modality
     og_hh_vintage = spark.read.option("mergeSchema", "true").option("basePath", f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}').parquet(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}/v*').where(f.col('vintage_week')<fw)
     
-    #For this to run the latest UPC list for this week, we need to know the location of the latest segment's UPC list.  When a UPC list is created by the API, it writes a lookup file with the path to where the UPC list is.  This is a parameter passed in the API.  The logic below takes that path in the lookup file, pulls out segment, traverses up two levels, and then looks for the latest directory publish.  Then it takes the latest upc list of the segment to run the vintage.  All this looks like a good opportunity for a function
-    upc_list_path_location = spark.read.format("delta").load(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}/upc_list_path_lookup')
-    upc_list_path_url = upc_list_path_location.select(upc_list_path_location.path)
-    upc_list_path_url = upc_list_path_url.rdd.map(lambda column: column.path).collect()
-    upc_list_path_url = " ".join(upc_list_path_url)
-    segment = [Path(upc_list_path_url).parts[-1]]
-    segment = " ".join(segment)
-    upc_list_path_url_root = Path(upc_list_path_url).parents[1]
-    upc_list_path_url_root = get_latest_modified_directory(upc_list_path_url_root.as_posix().replace('abfss:/', 'abfss://'))
-    upc_list_path_url_newest = f'{upc_list_path_url_root}{segment}'
-    upc_latest_location = spark.read.format("delta").load(upc_list_path_url_newest)
-
     og_trans_agg_vintage = spark.read.parquet(f'{embedded_dimensions_dir}{vintages_dir}/sales_{modality_name}').where(f.col('fiscal_week')<fw)
     #Pull basket information (sales, units, visits) for the given modality from the week we want to look at
 
@@ -145,6 +133,18 @@ for modality_name in modality_list_nonship:
             group_by = ["ehhn","trn_dt","geo_div_no"],
         ).where(f.col('ehhn').isNotNull())
     else:
+        #For this to run the latest UPC list for this week, we need to know the location of the latest segment's UPC list.  When a UPC list is created by the API, it writes a lookup file with the path to where the UPC list is.  This is a parameter passed in the API.  The logic below takes that path in the lookup file, pulls out segment, traverses up two levels, and then looks for the latest directory publish.  Then it takes the latest upc list of the segment to run the vintage.  All this looks like a good opportunity for a function
+        upc_list_path_location = spark.read.format("delta").load(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}/upc_list_path_lookup')
+        upc_list_path_url = upc_list_path_location.select(upc_list_path_location.path)
+        upc_list_path_url = upc_list_path_url.rdd.map(lambda column: column.path).collect()
+        upc_list_path_url = " ".join(upc_list_path_url)
+        segment = [Path(upc_list_path_url).parts[-1]]
+        segment = " ".join(segment)
+        upc_list_path_url_root = Path(upc_list_path_url).parents[1]
+        upc_list_path_url_root = get_latest_modified_directory(upc_list_path_url_root.as_posix().replace('abfss:/', 'abfss://'))
+        upc_list_path_url_newest = f'{upc_list_path_url_root}{segment}'
+        upc_latest_location = spark.read.format("delta").load(upc_list_path_url_newest)
+        
         df_modality_baskets = kpi.get_aggregate(
             start_date = start_date,
             end_date = end_date,
