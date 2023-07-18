@@ -153,31 +153,7 @@ for s in list(segments_dict.keys()):
   if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
     dbutils.fs.mkdirs(output_dir)
 
-  output_fp =  output_dir + s
+  output_fp =  output_dir + "/" + s
   segment_gtins.write.mode("overwrite").format("delta").save(output_fp)
-
-  #The egress directory where the files are FTP'd from Azure to On-Premise
-  #embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
-  #egress_dir = embedded_dimensions_dir + '/egress/upc_list'
-
-  #print(cyc_date)
-  #print(start_date)
-  #print(end_date)
-
-  #Used to process the UPC list into a format that the engineering team can take in
-  #def create_upc_json(df, query):
-  #  from pyspark.sql.functions import collect_list
-  #  upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
-  #  upc_string = '","'.join(upc_list)
     
-  #  upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"'+ str(start_date) +'","endDate":"'+ str(end_date) +'","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["'+ upc_string +'"]},"purchasingModality":"ALL"}],"name":"'+ query +'","description":"Buyers of '+ query +' products."}'
-  #  return upc_format
-
-  #Copy the file from outputted location to egress pick-up location
-  #json_payload = create_upc_json(segment_gtins, s)
-  #rdd = spark.sparkContext.parallelize([json_payload])
-  #df = spark.read.json(rdd)
-  #df.coalesce(1).write.mode("overwrite").json(output_fp)
-  #dbutils.fs.cp(output_fp, egress_dir +'/' + output_fn + '.json')
-  
   del(comms, sub_comms, n_weeks, segment_gtins)
