@@ -201,7 +201,7 @@ for modality_name in modality_list_nonship:
     hh_vintage.repartition(1).write.mode('overwrite').parquet(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}/vintage_week={int(fw)}')
   
     #Read in what we just wrote to get to weekly transaction data
-    new_hh_vintage = spark.read.parquet(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}')
+    new_hh_vintage = spark.read.parquet(f'{embedded_dimensions_dir}{vintages_dir}/hh_{modality_name}/vintage_week=*')
     #Make transaction level dataset 
     trans_agg_vintage = trans_agg.join(new_hh_vintage, 'ehhn', 'inner')
     #Write out vintage sales dataset
