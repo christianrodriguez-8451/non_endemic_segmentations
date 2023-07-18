@@ -769,11 +769,15 @@ def create_weighted_segs(weighted_df):
 
 # COMMAND ----------
 
-modality_list_nonship = ['ketogenic', 'paleo', 'vegan', 'vegetarian']
+diet_query_vintages_directories = spark.createDataFrame(list(dbutils.fs.ls(embedded_dimensions_dir + vintages_dir)))
+diet_query_vintages_directories = diet_query_vintages_directories.filter(diet_query_vintages_directories.name.like('sales_%'))
+diet_query_vintages_directories = diet_query_vintages_directories.rdd.map(lambda column: column.name).collect()
+modality_list_nonship = diet_query_vintages_directories
+#modality_list_nonship = ['ketogenic', 'paleo', 'vegan', 'vegetarian']
 #spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled","true")
 
 for modality_name in modality_list_nonship:
-    embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
+    #embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
     segment_behavior_dir = '/customer_data_assets/segment_behavior'
 
     weights_filepath = embedded_dimensions_dir + segment_behavior_dir + "/weights"
