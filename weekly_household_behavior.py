@@ -342,8 +342,12 @@ def pull_vintages_df(acds,
     
     if vintage_type == 'sales':
         filter_col = 'fiscal_week'
+        modality = modality.replace('sales_', '')
+        modality = modality.replace('/', '')
     elif vintage_type == 'hh':
         filter_col = 'vintage_week'
+        modality = modality.replace('sales_', '')
+        modality = modality.replace('/', '')
     else:
         raise ValueError(f'vintage_type must be either "sales" for VintageKPI data, or "hh" for vintage week')
         
