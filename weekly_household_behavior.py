@@ -342,12 +342,8 @@ def pull_vintages_df(acds,
     
     if vintage_type == 'sales':
         filter_col = 'fiscal_week'
-        modality = modality.replace('sales_', '')
-        modality = modality.replace('/', '')
     elif vintage_type == 'hh':
         filter_col = 'vintage_week'
-        modality = modality.replace('sales_', '')
-        modality = modality.replace('/', '')
     else:
         raise ValueError(f'vintage_type must be either "sales" for VintageKPI data, or "hh" for vintage week')
         
@@ -781,7 +777,8 @@ modality_list_nonship = diet_query_vintages_directories
 #spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled","true")
 
 for modality_name in modality_list_nonship:
-    #embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
+    modality_name = modality_name.replace('sales_', '')
+    modality_name = modality_name.replace('/', '')
     segment_behavior_dir = '/customer_data_assets/segment_behavior'
 
     weights_filepath = embedded_dimensions_dir + segment_behavior_dir + "/weights"
