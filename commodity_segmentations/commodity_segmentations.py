@@ -96,6 +96,10 @@ end_date = last_monday - dr.datetime.timedelta(days=1)
 #Pull in transaction data
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
+#Used to get household count later
+acds2 = acds.select("gtin_no", "ehhn")
+acds2 = acds2.dropDuplicates()
+acds2.cache()
 #Add in a week column in your acds pull to enable easy querying of variable weeks
 acds = acds.\
 withColumn('year', f.substring('trn_dt', 1, 4)).\
@@ -145,6 +149,13 @@ for s in list(segments_dict.keys()):
   segment_gtins = segment_gtins.select("gtin_no")
   segment_gtins = segment_gtins.dropDuplicates()
   segment_gtins.cache()
+
+  #Print how many households the segment is hitting
+  ehhn = acds2.join(segment_gtins, on="gtin_no", how="inner")
+  ehhn = ehhn.select("ehhn")
+  ehhn = ehhn.dropDuplicates()
+  message = ("{} household count: {}".format(s, ehhn.count()))
+  print(message)
   
   #Write-out the file
   cyc_date = dt.date.today().strftime('%Y-%m-%d')
