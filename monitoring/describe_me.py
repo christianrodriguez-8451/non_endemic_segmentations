@@ -1,4 +1,8 @@
 # Databricks notebook source
+"""
+Add Carousel as next feature.
+"""
+
 spark.conf.set("spark.sql.shuffle.partitions","auto")
 from pyspark.sql.functions import collect_list
 from pathlib import Path
