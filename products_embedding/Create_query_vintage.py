@@ -122,69 +122,69 @@ for directory_name in diet_query_embeddings_directories_list:
         
       upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
 
-      #DEBUG - UPC count
-      print("UPC Vector Count: {}".format(upc_vectors_dot_product.count()))
-      
-      directory_name = directory_name.replace('/', '')
+    #DEBUG - UPC count
+    print("UPC Vector Count: {}".format(upc_vectors_dot_product.count()))
+    
+    directory_name = directory_name.replace('/', '')
 
-      fiscal_st_dt = today_year_ago
-      fiscal_end_dt = today 
-      modality_acds = directory_name 
-      modality_name = modality_acds.lower()
+    fiscal_st_dt = today_year_ago
+    fiscal_end_dt = today 
+    modality_acds = directory_name 
+    modality_name = modality_acds.lower()
 
-      acds = ACDS(use_sample_mart=False)
-      kpi = KPI(use_sample_mart=False)
-      dates_tbl = acds.dates.select('trn_dt', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
+    acds = ACDS(use_sample_mart=False)
+    kpi = KPI(use_sample_mart=False)
+    dates_tbl = acds.dates.select('trn_dt', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
 
-      df_ecomm_baskets = kpi.get_aggregate(
-      start_date = fiscal_st_dt,
-      end_date = fiscal_end_dt,
-      metrics = ["sales","gr_visits","units"],
-      join_with = 'stores', #need this to use geo, #will need to remove store exclusions GR for Ocado and Ship (Vitacost as Division). this by default will include ["011","014","016","018","021","024","025","026","029","034","035","105","531","534","615","620","660","701","703","705","706"] per https://github.8451.com/FoundationalComponents/GoldenRules/blob/master/Store_Exclusions.md
-      group_by = ["ehhn","trn_dt","geo_div_no"], 
-      filter_by=Sifter(upc_vectors_dot_product, join_cond=Equality("gtin_no"), method="include")
-      )
+    df_ecomm_baskets = kpi.get_aggregate(
+    start_date = fiscal_st_dt,
+    end_date = fiscal_end_dt,
+    metrics = ["sales","gr_visits","units"],
+    join_with = 'stores', #need this to use geo, #will need to remove store exclusions GR for Ocado and Ship (Vitacost as Division). this by default will include ["011","014","016","018","021","024","025","026","029","034","035","105","531","534","615","620","660","701","703","705","706"] per https://github.8451.com/FoundationalComponents/GoldenRules/blob/master/Store_Exclusions.md
+    group_by = ["ehhn","trn_dt","geo_div_no"], 
+    filter_by=Sifter(upc_vectors_dot_product, join_cond=Equality("gtin_no"), method="include")
+    )
 
-      pickup_bsk = df_ecomm_baskets.select('ehhn', 'trn_dt', 'sales', 'units', 'gr_visits').filter(df_ecomm_baskets.ehhn.isNotNull())
+    pickup_bsk = df_ecomm_baskets.select('ehhn', 'trn_dt', 'sales', 'units', 'gr_visits').filter(df_ecomm_baskets.ehhn.isNotNull())
 
-      trans_agg = pickup_bsk.join(dates_tbl, 'trn_dt', 'inner')\
-                            .groupBy('ehhn', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')\
-                            .agg(f.sum('sales').alias('weekly_sales'),
-                                f.sum('units').alias('weekly_units'),
-                                f.sum('gr_visits').alias('weekly_visits'))
+    trans_agg = pickup_bsk.join(dates_tbl, 'trn_dt', 'inner')\
+                          .groupBy('ehhn', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')\
+                          .agg(f.sum('sales').alias('weekly_sales'),
+                              f.sum('units').alias('weekly_units'),
+                              f.sum('gr_visits').alias('weekly_visits'))
 
-      #finding division 
-      pickup_bsk_div = df_ecomm_baskets.select('ehhn', 'trn_dt', 'sales', 'geo_div_no').filter(df_ecomm_baskets.ehhn.isNotNull())
-      ehhn_min_dt = pickup_bsk_div.groupBy('ehhn').agg(f.min('trn_dt').alias('trn_dt'))
-      ehhn_div_min = pickup_bsk_div.join(ehhn_min_dt, how = 'inner', on = ['ehhn','trn_dt'])
+    #finding division 
+    pickup_bsk_div = df_ecomm_baskets.select('ehhn', 'trn_dt', 'sales', 'geo_div_no').filter(df_ecomm_baskets.ehhn.isNotNull())
+    ehhn_min_dt = pickup_bsk_div.groupBy('ehhn').agg(f.min('trn_dt').alias('trn_dt'))
+    ehhn_div_min = pickup_bsk_div.join(ehhn_min_dt, how = 'inner', on = ['ehhn','trn_dt'])
 
-      div_agg = ehhn_div_min.join(dates_tbl, 'trn_dt', 'inner').orderBy('trn_dt').groupBy('ehhn').agg(f.first('geo_div_no').alias('vintage_div'),f.min('fiscal_week').alias('fiscal_week'))
+    div_agg = ehhn_div_min.join(dates_tbl, 'trn_dt', 'inner').orderBy('trn_dt').groupBy('ehhn').agg(f.first('geo_div_no').alias('vintage_div'),f.min('fiscal_week').alias('fiscal_week'))
 
-      new_hhs = trans_agg.where(f.col('weekly_visits')>0)
-      hhs_min_week = new_hhs.groupBy('ehhn')\
-                              .agg(f.min('fiscal_week').alias('fiscal_week'))
+    new_hhs = trans_agg.where(f.col('weekly_visits')>0)
+    hhs_min_week = new_hhs.groupBy('ehhn')\
+                            .agg(f.min('fiscal_week').alias('fiscal_week'))
 
-      hh_vintage = hhs_min_week.join(dates_tbl, 'fiscal_week', 'inner') \
-      .join(div_agg,how = 'inner', on = ['ehhn','fiscal_week']) \
-      .select('ehhn', 'fiscal_week', 'fiscal_year', 'fiscal_month', 'fiscal_quarter','vintage_div')\
-      .distinct()\
-      .withColumnRenamed('fiscal_week', 'vintage_week')\
-      .withColumnRenamed('fiscal_year', 'vintage_year')\
-      .withColumnRenamed('fiscal_month', 'vintage_period')\
-      .withColumnRenamed('fiscal_quarter', 'vintage_quarter')
+    hh_vintage = hhs_min_week.join(dates_tbl, 'fiscal_week', 'inner') \
+    .join(div_agg,how = 'inner', on = ['ehhn','fiscal_week']) \
+    .select('ehhn', 'fiscal_week', 'fiscal_year', 'fiscal_month', 'fiscal_quarter','vintage_div')\
+    .distinct()\
+    .withColumnRenamed('fiscal_week', 'vintage_week')\
+    .withColumnRenamed('fiscal_year', 'vintage_year')\
+    .withColumnRenamed('fiscal_month', 'vintage_period')\
+    .withColumnRenamed('fiscal_quarter', 'vintage_quarter')
 
-      #tried making this an overwrite but then it deleted all weeks and overwrites the entire folder
-      hh_vintage.coalesce(1).write.mode('overwrite').partitionBy('vintage_week').parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name)
+    #tried making this an overwrite but then it deleted all weeks and overwrites the entire folder
+    hh_vintage.coalesce(1).write.mode('overwrite').partitionBy('vintage_week').parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name)
 
-      if upc_list_path_api:
-        ##write look up file of upc list location 
-        upc_list_path_lookup.write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup')
-      else:
-        ##write look up file of upc list location 
-        directory_name_slash = directory_name + '/'
-        upc_list_path_lookup.select(upc_list_path_lookup.path,upc_list_path_lookup.name).where(upc_list_path_lookup.name == directory_name_slash).write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup') 
-      
-      new_hh_vintage = spark.read.parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name + '/vintage_week=*')
-      trans_agg_vintage = trans_agg.join(new_hh_vintage, 'ehhn', 'inner')
+    if upc_list_path_api:
+      ##write look up file of upc list location 
+      upc_list_path_lookup.write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup')
+    else:
+      ##write look up file of upc list location 
+      directory_name_slash = directory_name + '/'
+      upc_list_path_lookup.select(upc_list_path_lookup.path,upc_list_path_lookup.name).where(upc_list_path_lookup.name == directory_name_slash).write.mode("overwrite").format("delta").save(embedded_dimensions_dir + vintages_dir + '/hh_' + directory_name + '/upc_list_path_lookup') 
+    
+    new_hh_vintage = spark.read.parquet(embedded_dimensions_dir + vintages_dir + '/hh_' + modality_name + '/vintage_week=*')
+    trans_agg_vintage = trans_agg.join(new_hh_vintage, 'ehhn', 'inner')
 
-      trans_agg_vintage.coalesce(1).write.mode('overwrite').partitionBy('fiscal_week').parquet(embedded_dimensions_dir + vintages_dir + '/sales_' + modality_name)
+    trans_agg_vintage.coalesce(1).write.mode('overwrite').partitionBy('fiscal_week').parquet(embedded_dimensions_dir + vintages_dir + '/sales_' + modality_name)
