@@ -103,6 +103,7 @@ import pyspark.sql.functions as f
 #Ocado = will have to remove store exclusions from golden rules parameter as 540 is removed by default. also will have a different filter and parameters will look a little different (Division filter will only be 540). if we want at a shed level, this is more complex and need to investigate. 
 
 # COMMAND ----------
+
 for directory_name in diet_query_embeddings_directories_list:
     try:
       dbutils.fs.ls(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name)
@@ -116,6 +117,9 @@ for directory_name in diet_query_embeddings_directories_list:
         upc_vectors_path = upc_list_path + directory_name   
         
       upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
+
+      #DEBUG - UPC count
+      print("UPC Vector Count: {}".format(upc_vectors_dot_product.count()))
       
       directory_name = directory_name.replace('/', '')
 
@@ -132,8 +136,7 @@ for directory_name in diet_query_embeddings_directories_list:
       start_date = fiscal_st_dt,
       end_date = fiscal_end_dt,
       metrics = ["sales","gr_visits","units"],
-      join_with = 'stores', #need this to use geo
-      apply_golden_rules = golden_rules(), #will need to remove store exclusions GR for Ocado and Ship (Vitacost as Division). this by default will include ["011","014","016","018","021","024","025","026","029","034","035","105","531","534","615","620","660","701","703","705","706"] per https://github.8451.com/FoundationalComponents/GoldenRules/blob/master/Store_Exclusions.md
+      join_with = 'stores', #need this to use geo, #will need to remove store exclusions GR for Ocado and Ship (Vitacost as Division). this by default will include ["011","014","016","018","021","024","025","026","029","034","035","105","531","534","615","620","660","701","703","705","706"] per https://github.8451.com/FoundationalComponents/GoldenRules/blob/master/Store_Exclusions.md
       group_by = ["ehhn","trn_dt","geo_div_no"], 
       filter_by=Sifter(upc_vectors_dot_product, join_cond=Equality("gtin_no"), method="include")
       )
