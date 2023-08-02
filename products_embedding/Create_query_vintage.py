@@ -89,6 +89,8 @@ yesterday = date.today() - timedelta(days=1)
 today_year_ago = (yesterday - relativedelta(years=1)).strftime('%Y%m%d')
 today = datetime.today().strftime('%Y%m%d')
 
+print(diet_query_embeddings_directories_list)
+
 # COMMAND ----------
 
 from effodata import golden_rules, Joiner, Sifter, Equality, ACDS
@@ -105,6 +107,8 @@ import pyspark.sql.functions as f
 # COMMAND ----------
 
 for directory_name in diet_query_embeddings_directories_list:
+    print(directory_name)
+
     try:
       dbutils.fs.ls(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name)
       print(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name + "exists and DOESN'T need to be created")
