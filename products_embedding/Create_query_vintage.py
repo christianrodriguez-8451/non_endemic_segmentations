@@ -115,12 +115,12 @@ for directory_name in diet_query_embeddings_directories_list:
     except:
       print(embedded_dimensions_dir + vintages_dir + "/hh_" + directory_name + " doesn't exist and needs to be created")
       
-      if upc_list_path_api:
-        upc_vectors_path = upc_list_path_api
-      else:
-        upc_vectors_path = upc_list_path + directory_name   
+    if upc_list_path_api:
+      upc_vectors_path = upc_list_path_api
+    else:
+      upc_vectors_path = upc_list_path + directory_name   
         
-      upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
+    upc_vectors_dot_product = spark.read.format("delta").load(upc_vectors_path)
 
     #DEBUG - UPC count
     print("UPC Vector Count: {}".format(upc_vectors_dot_product.count()))
