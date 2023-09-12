@@ -100,8 +100,7 @@ pim_core = pim_core.select("gtin_no")
 pim_core = pim_core.dropDuplicates()
 
 #Write-out the file
-cyc_date = "2023-07-20"
-#cyc_date = dt.date.today().strftime('%Y-%m-%d')
+cyc_date = dt.date.today().strftime('%Y-%m-%d')
 cyc_date = "cycle_date={}".format(cyc_date)
 output_dir = con.output_fp + cyc_date
 if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
@@ -109,3 +108,7 @@ if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
 
 output_fp =  output_dir + "/" + "dieting"
 pim_core.write.mode("overwrite").format("delta").save(output_fp)
+
+# COMMAND ----------
+
+
