@@ -1,4 +1,15 @@
 # Databricks notebook source
+"""
+Pulls in a year of the most recent year of transaction data via ACDS and
+appends to it the PIM file from the latest cycle. Next, it keeps only
+UPCs that contains 'diet' in the product name or the product description.
+Then, it drops UPCs that either belong to an inedible commodity or
+do not belong to the diet segmentation. The final output is a delta file with
+gtin_no as the only column.
+"""
+
+# COMMAND ----------
+
 #When you use a job to run your notebook, you will need the service principles
 #You only need to define what storage accounts you are using
 
@@ -47,7 +58,7 @@ def get_latest_modified_directory(pDirectory):
     #return the file name that was last modifed in the given directory
     return df_filtered.first()['FullFilePath']
 
-
+#Pull in the latest cycle of PIM data
 pim_path = get_latest_modified_directory("abfss://pim@sa8451posprd.dfs.core.windows.net/pim_core/by_cycle/")
 pim_core = spark.read.parquet(pim_path)
 cols = list(pim_core.columns)
@@ -59,6 +70,7 @@ pim_core = pim_core.select(
 for colname in pim_core.columns:
     pim_core = pim_core.withColumn(colname, f.trim(f.col(colname)))
 
+#Keep only UPCs that contain the word diet in the product name or product description
 pim_core = pim_core.filter(
   f.col("gtinName").like("%DIET%") | (f.col("krogerOwnedEcommerceDescription").like("%DIET%"))
 )
@@ -66,6 +78,7 @@ pim_core.count()
 
 # COMMAND ----------
 
+#Drop commodities that do not belong in the diet segmentation
 bad_comms = [
   "DRINKWARE/FLATWARE", "PET CARE SUPPLIES", "TEAM LICENSED NON-APPAREL",
   "NARCOTICS/CNTRL SUB/LGND/NONLG", "MISCELLANEOUS TRANSACTIONS",
@@ -77,14 +90,14 @@ pim_core.count()
 
 # COMMAND ----------
 
-#Define the time range of data that you are pulling
+#Define the time range of data that you are pulling for ACDS
 max_weeks = 52
 today = dt.date.today()
 last_monday = today - dr.datetime.timedelta(days=today.weekday())
 start_date = last_monday - dr.datetime.timedelta(weeks=max_weeks)
 end_date = last_monday - dr.datetime.timedelta(days=1)
 
-#Pull in transaction data
+#Pull in transaction data to get a raw count of how many houses are captured by these UPCs
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
 acds = acds.select("gtin_no", "ehhn")
@@ -95,6 +108,7 @@ print("Diet segmentation's raw household count: {}".format(acds.count()))
 
 # COMMAND ----------
 
+#Formating for write-out
 pim_core = pim_core.withColumnRenamed("upc", "gtin_no")
 pim_core = pim_core.select("gtin_no")
 pim_core = pim_core.dropDuplicates()
@@ -108,7 +122,3 @@ if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
 
 output_fp =  output_dir + "/" + "dieting"
 pim_core.write.mode("overwrite").format("delta").save(output_fp)
-
-# COMMAND ----------
-
-
