@@ -84,11 +84,12 @@ embedding_query= embedding_query.split(",")
 res = any(len(ele) == 0 for ele in embedding_query)
 
 #When we move forward with more of those below, we will need two different lists.  One for the query and one to create 
-# 'FREE FROM GLUTEN', 'KETOGENIC', 'Lactose free', 'MACROBIOTIC', 'PALEO', 'VEGAN', 'VEGETARIAN', 'COELIAC', 'AYERVEDIC', 'LOW BACTERIA', 'DIABETIC', 
-# ['Engine 2',  'GLYCEMIC', 'Grain free', 'HALAL', \
-#'Healthy Eating', 'Healthy Pregnancy', 'Heart Friendly', 'HGC', 'High protein', 'KEHILLA', 'Kidney-Friendly', \
-#'KOSHER', 'Low calorie', 'Low FODMAP', 'Low protein', 'Low salt', 'Mediterranean Diet', \
-#'METABOLIC', 'NON_VEG', 'PECETARIAN', 'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', \
+# 'FREE FROM GLUTEN', 'KETOGENIC', 'Lactose free', 'MACROBIOTIC', 'PALEO', 'VEGAN', 'VEGETARIAN', 'COELIAC',
+# 'AYERVEDIC', 'LOW BACTERIA', 'DIABETIC', 'Engine 2',  'GLYCEMIC', 'Grain free', 'HALAL', 'Healthy Eating',
+# 'Healthy Pregnancy', 'Heart Friendly', 'HGC', 'High protein', 'KEHILLA', 'Kidney-Friendly', 'KOSHER', 'Low calorie',
+# 'Low FODMAP', 'Low protein', 'Low salt', 'Mediterranean Diet', 'METABOLIC', 'NON_VEG', 'PECETARIAN',
+# \
+#  'PLANT BASED', 'Plant Based Whole Foods Diet', 'RAW FOOD', \
 #'VEG_OVO', 'WITHOUT BEEF', 'WITHOUT PORK']
 
 
