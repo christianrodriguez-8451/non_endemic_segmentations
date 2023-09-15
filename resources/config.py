@@ -1,3 +1,6 @@
+from pyspark.dbutils import DBUtils
+dbutils = DBUtils(spark)
+
 # Define service principals
 service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev', key='spTmMediaDev-pw')
 service_application_id = dbutils.secrets.get(scope='kv-8451-tm-media-dev', key='spTmMediaDev-app-id')
