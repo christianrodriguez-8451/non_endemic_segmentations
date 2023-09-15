@@ -26,9 +26,6 @@ from sentence_transformers import SentenceTransformer, util
 
 # COMMAND ----------
 
-acds = ACDS(use_sample_mart=False)
-kpi = KPI(use_sample_mart=False)
-
 # Set configurations
 for sa in config.storage_account:
     spark.conf.set(f"fs.azure.account.auth.type.{sa}.dfs.core.windows.net", "OAuth")
@@ -40,6 +37,9 @@ for sa in config.storage_account:
                    f"https://login.microsoftonline.com/{config.directory_id}/oauth2/token")
 
 # COMMAND ----------
+
+acds = ACDS(use_sample_mart=False)
+kpi = KPI(use_sample_mart=False)
 
 # Look at acds transactions for all households the past year
 acds_previous_year_transactions = \
