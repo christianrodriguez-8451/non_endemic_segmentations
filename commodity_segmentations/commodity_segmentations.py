@@ -135,6 +135,13 @@ all_gtins = acds.filter((acds["commodity_desc"].isin(my_comms)) | (acds["sub_com
 all_gtins.cache()
 del(my_comms, my_subs)
 
+#Create the directory where the segment UPCs are going to land
+cyc_date = dt.date.today().strftime('%Y-%m-%d')
+cyc_date = "cycle_date={}".format(cyc_date)
+output_dir = con.output_fp + cyc_date
+if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
+  dbutils.fs.mkdirs(output_dir)
+
 #Create the UPC list for each segmentation in the control file
 for s in list(segments_dict.keys()):
   #Un-pack the parameters for the given segment
@@ -158,12 +165,6 @@ for s in list(segments_dict.keys()):
   print(message)
   
   #Write-out the file
-  cyc_date = dt.date.today().strftime('%Y-%m-%d')
-  cyc_date = "cycle_date={}".format(cyc_date)
-  output_dir = con.output_fp + cyc_date
-  if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
-    dbutils.fs.mkdirs(output_dir)
-
   output_fp =  output_dir + "/" + s
   segment_gtins.write.mode("overwrite").format("delta").save(output_fp)
     
