@@ -7,6 +7,6 @@ The commodity/sub-commodity combinations and their respective segmentations are 
 This process creates the UPC set for the diet segmentation by pulling UPCs from PIM that contain 'diet' in the product name or product description. Inedible and irrevelant commodities are filtered out from the set.
 
 # Notes
-* commodity_segmentations.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 18:00 (UTC-05:00 - Central Time).
+* commodity_segmentations.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 18:00 (UTC-05:00 - Central Time) every Friday.
 
-* diet_segmentation.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 18:00 (UTC-05:00 - Central Time).
+* diet_segmentation.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 18:00 (UTC-05:00 - Central Time) every Friday.
