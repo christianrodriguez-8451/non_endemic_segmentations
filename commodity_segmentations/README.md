@@ -4,4 +4,4 @@ This process creates sets of UPCs that define commodity-segmentations. Household
 The commodity/sub-commodity combinations and their respective segmentations are stored in a control file.  The location of the live control file is stored in the config.py file.
 
 # Diet Segmentation
-This process creates the UPC set for the diet segmentation by pulling UPCs that contain 'diet' in the product name or product description.
+This process creates the UPC set for the diet segmentation by pulling UPCs that contain 'diet' in the product name or product description. Inedible and irrevelant commodities are filtered out from the set.
