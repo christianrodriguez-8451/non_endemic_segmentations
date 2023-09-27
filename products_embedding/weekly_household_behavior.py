@@ -19,14 +19,6 @@ import products_embedding.src.hmls as hml
 
 # COMMAND ----------
 
-# Set configurations
-for sa in config.storage_account:
-    spark.conf.set(f"fs.azure.account.auth.type.{sa}.dfs.core.windows.net", "OAuth")
-    spark.conf.set(f"fs.azure.account.oauth.provider.type.{sa}.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
-    spark.conf.set(f"fs.azure.account.oauth2.client.id.{sa}.dfs.core.windows.net", config.service_application_id)
-    spark.conf.set(f"fs.azure.account.oauth2.client.secret.{sa}.dfs.core.windows.net", config.service_credential)
-    spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{sa}.dfs.core.windows.net", f"https://login.microsoftonline.com/{config.directory_id}/oauth2/token")
-
 # see if these make this notebook run more efficiently
 # spark.conf.set("spark.sql.shuffle.partitions", "auto")
 # spark.conf.set('spark.databricks.adaptive.autoOptimizeShuffle.enabled', 'true')
@@ -156,7 +148,7 @@ for modality_name in modality_list_nonship:
         column_order=column_order
     )
 
-    segment_filepath = configs.embedded_dimensions_dir + configs.segment_behavior_dir + "/segmentation"
+    segment_filepath = config.embedded_dimensions_dir + config.segment_behavior_dir + "/segmentation"
 
     hml_weighted_df = \
         (spark.read.format("delta").load(weights_filepath).filter(f.col('modality') == modality_name).filter(f.col('stratum_week') == stratum_week))

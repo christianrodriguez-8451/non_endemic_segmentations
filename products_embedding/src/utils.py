@@ -1,9 +1,34 @@
-import pandas as pd
-from effodata import ACDS
-
-# spark
-from pyspark.sql.session import SparkSession
+# IMPORT PACKAGES
 import pyspark.sql.functions as f
+from pyspark.sql import types as t
+from pyspark.sql.column import Column
+from pyspark.sql.window import Window
+from pyspark.sql.functions import collect_set, substring_index, concat_ws, concat, split, regexp_replace, size, expr, \
+    when, array_distinct, collect_list
+import pandas as pd
+import numpy as np
+
+pd.set_option('display.max_columns', 500)
+from effodata import ACDS, golden_rules, Joiner, Sifter, Equality, sifter, join_on, joiner
+from kpi_metrics import (
+     KPI,
+     AliasMetric,
+     CustomMetric,
+     AliasGroupby,
+     Rollup,
+     Cube,
+     available_metrics,
+     get_metrics
+)
+
+# These packages are required for delivery
+from sentence_transformers import SentenceTransformer, util
+
+# Specify the model directory on DBFS
+model_dir = "/dbfs/dbfs/FileStore/users/s354840/pretrained_transformer_model"
+
+# Loading the transformer model
+model = SentenceTransformer(model_dir)
 
 ########################
 # PURPOSE
@@ -11,6 +36,36 @@ import pyspark.sql.functions as f
 ##
 # This file contains utility functions that don't have a natural home in other areas.
 ##
+
+
+@f.udf(returnType=t.FloatType())
+def get_dot_product_udf(a: Column, b: Column):
+    return float(np.asarray(a).dot(np.asarray(b)))
+
+
+def create_upc_json(df, query):
+    upc_list = df.rdd.map(lambda column: column.gtin_no).collect()
+    upc_string = '","'.join(upc_list)
+
+    upc_format = '{"cells":[{"order":0,"type":"BUYERS_OF_PRODUCT","purchasingPeriod":{"startDate":"' + iso_start_date + '","endDate":"' + iso_end_date + '","duration":52},"cellRefresh":"DYNAMIC","behaviorType":"BUYERS_OF_X","xProducts":{"upcs":["' + upc_string + '"]},"purchasingModality":"ALL"}],"name":"' + query + '","description":"Buyers of ' + query + ' products."}'
+    return upc_format
+
+
+def create_search_df(dot_products_df):
+    search_output_df = (dot_products_df.filter(f.col('dot_product') >= .3))
+    return search_output_df
+
+
+def create_dot_df(product_vectors_df, array_query_col):
+    dot_products_df = (
+        product_vectors_df.withColumn('dot_product', get_dot_product_udf("vector", array_query_col)).drop(
+            'vector').withColumn('dot_product_rank', f.rank().over(Window().orderBy(f.col('dot_product').desc()))))
+    return dot_products_df
+
+
+def create_array_query(query_vector):
+    array_query_col = f.array([f.lit(i) for i in query_vector])
+    return array_query_col
 
 
 def get_spark_session():

@@ -22,6 +22,12 @@ import products_embedding.src.utils as utils
 # minus 1 year
 today_year_ago = (datetime.today() - relativedelta(years=1)).strftime('%Y%m%d')
 today = datetime.today().strftime('%Y%m%d')
+today_time = datetime.now()
+duration_time = (today_time + relativedelta(weeks=52))
+# Get current ISO 8601 datetime in string format
+iso_start_date = today_time.isoformat()
+iso_end_date = duration_time.isoformat()
+
 
 def pull_from_acds_dates(fw_start, fw_end, additional_cols=None):
     """
@@ -42,7 +48,7 @@ def pull_from_acds_dates(fw_start, fw_end, additional_cols=None):
     else:
         select_cols = ['fiscal_week'] + additional_cols
 
-    dates_df = (acds.dates
+    dates_df = (utils.acds.dates
                 .select(select_cols)
                 .distinct()
                 .filter(f.col('fiscal_week').between(fw_start, fw_end))

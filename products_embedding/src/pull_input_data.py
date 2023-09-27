@@ -5,7 +5,7 @@ from pyspark.sql import functions as f
 # internal
 import products_embedding.src.utils as utils
 import products_embedding.src.date_calcs as dates
-import products_embedding.config as configs
+import resources.config as config
 
 
 ########################
@@ -67,7 +67,7 @@ def pull_vintages_df(acds,
     spark = utils.get_spark_session()
 
     # use config to store file paths
-    base_path = configs.embedded_dimensions_dir + configs.vintages_dir
+    base_path = config.embedded_dimensions_dir + config.vintages_dir
     config_vintage_modality = '/' + vintage_type + '_' + modality
     full_parquet = base_path + config_vintage_modality + '/' + filter_col + '=' + fws_to_pull
 
