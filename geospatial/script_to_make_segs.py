@@ -100,6 +100,14 @@ metro_seg.write.mode("overwrite").format("delta").save(config.storage_micro_metr
 
 # COMMAND ----------
 
+metro_seg.write.mode("overwrite").parquet(config.parquet_storage_micro_metro_nonmetro)
+
+# COMMAND ----------
+
+config.parquet_storage_micro_metro_nonmetro
+
+# COMMAND ----------
+
 # MAGIC %md 
 # MAGIC ## state
 
@@ -112,6 +120,10 @@ state_seg = pref_store_and_dna.select("ehhn", "STATE")
 # COMMAND ----------
 
 state_seg.write.mode("overwrite").format("delta").save(config.storage_state)
+
+# COMMAND ----------
+
+state_seg.write.mode("overwrite").parquet(config.parquet_storage_state)
 
 # COMMAND ----------
 
@@ -130,6 +142,10 @@ media_market_seg.write.mode("overwrite").format("delta").save(config.storage_med
 
 # COMMAND ----------
 
+media_market_seg.write.mode("overwrite").parquet(config.parquet_storage_media_market)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## census region
 
@@ -140,6 +156,10 @@ cen_region_seg = pref_store_and_dna.select("ehhn", "CEN_REG")
 # COMMAND ----------
 
 cen_region_seg.write.mode("overwrite").format("delta").save(config.storage_census_region)
+
+# COMMAND ----------
+
+cen_region_seg.write.mode("overwrite").parquet(config.parquet_storage_census_region)
 
 # COMMAND ----------
 
@@ -156,4 +176,4 @@ cen_division_seg.write.mode("overwrite").format("delta").save(config.storage_cen
 
 # COMMAND ----------
 
-
+cen_division_seg.write.mode("overwrite").parquet(config.parquet_storage_census_division)
