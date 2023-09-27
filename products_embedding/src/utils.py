@@ -3,6 +3,7 @@ import pyspark.sql.functions as f
 from pyspark.sql import types as t
 from pyspark.sql.column import Column
 from pyspark.sql.window import Window
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import collect_set, substring_index, concat_ws, concat, split, regexp_replace, size, expr, \
     when, array_distinct, collect_list
 import pandas as pd

@@ -6,7 +6,7 @@ import resources.config as config
 
 import pandas as pd
 import pyspark.sql.functions as f
-from pyspark.sql import SparkSession
+
 from pyspark.sql.window import Window
 from effodata import golden_rules, Joiner, Sifter, Equality, ACDS
 import argparse

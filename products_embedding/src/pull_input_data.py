@@ -1,5 +1,4 @@
 # spark
-from pyspark.sql.session import SparkSession
 from pyspark.sql import functions as f
 
 # internal
