@@ -22,6 +22,9 @@ from kpi_metrics import (
      get_metrics
 )
 
+acds = ACDS(use_sample_mart=False)
+kpi = KPI(use_sample_mart=False)
+
 # These packages are required for delivery
 from sentence_transformers import SentenceTransformer, util
 
