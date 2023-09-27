@@ -104,10 +104,6 @@ metro_seg.write.mode("overwrite").parquet(config.parquet_storage_micro_metro_non
 
 # COMMAND ----------
 
-config.parquet_storage_micro_metro_nonmetro
-
-# COMMAND ----------
-
 # MAGIC %md 
 # MAGIC ## state
 
