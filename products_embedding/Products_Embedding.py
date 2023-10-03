@@ -5,13 +5,12 @@ import products_embedding.src.date_calcs as dates
 import src.utils as utils
 
 # COMMAND ----------
-acds = utils.ACDS(use_sample_mart=False)
-kpi = utils.KPI(use_sample_mart=False)
 
 # Look at acds transactions for all households the past year
 acds_previous_year_transactions = \
-  acds.get_transactions(dates.today_year_ago,
-                        dates.today, apply_golden_rules=utils.golden_rules(['customer_exclusions', "fuel_exclusions"]))
+  utils.acds.get_transactions(dates.today_year_ago,
+                              dates.today, apply_golden_rules=utils.golden_rules(['customer_exclusions',
+                                                                                  "fuel_exclusions"]))
 acds_previous_year_transactions = acds_previous_year_transactions.where(acds_previous_year_transactions.scn_unt_qy > 0)
 pyear_purchased_upcs = acds_previous_year_transactions.select(acds_previous_year_transactions.gtin_no).distinct()
 pyear_purchased_upcs = pyear_purchased_upcs.select(pyear_purchased_upcs.gtin_no.alias('upc'))
