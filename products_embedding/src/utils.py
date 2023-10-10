@@ -1,4 +1,5 @@
 # IMPORT PACKAGES
+import resources.config as config
 import pyspark.sql.functions as f
 from pyspark.sql import types as t
 from pyspark.sql.column import Column
@@ -167,3 +168,17 @@ def write_to_delta(df_to_write, filepath, write_mode, modality, end_week, stratu
          )
     else:
         raise ValueError("acceptable `write_mode` values are 'append' and 'overwrite'")
+
+
+def pyspark_databricks_widget_check_for_empty_text_field(widget_name):
+    """Checks if the given Databricks widget is empty.
+
+    Args:
+    widget_name: The name of the Databricks widget.
+
+    Returns:
+    True if the widget is empty, False otherwise.
+    """
+
+    widget_value = config.dbutils.widgets.get(widget_name)
+    return widget_value == ""

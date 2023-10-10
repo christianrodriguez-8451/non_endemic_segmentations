@@ -20,17 +20,17 @@ embedding_sentence_query_lookup = upc_list_path + 'embedding_sentence_query_look
 embedding_sentence_query_lookup_df = config.spark.read.format("delta").load(embedding_sentence_query_lookup)
 
 config.dbutils.widgets.text("embedding_name", "")
-embedding_name = config.dbutils.widgets.get("embedding_name")
-res = any(len(ele) == 0 for ele in embedding_name)
 config.dbutils.widgets.text("embedding_sentence_query", "")
-embedding_sentence_query = config.dbutils.widgets.get("embedding_sentence_query")
+embedding_name = "embedding_name"
+embedding_sentence_query = "embedding_sentence_query"
+is_empty = utils.pyspark_databricks_widget_check_for_empty_text_field(embedding_name)
 
 # COMMAND ----------
 
 # taking dot product of query vector and product vector
 # order by dot product descending
 
-if not res:
+if not is_empty:
     embedding_sentence_query = ''.join(embedding_sentence_query).lower()
     # Encoding the query, make it a pyspark vector we can take the dot product of later
     query_vector = utils.model.encode(embedding_sentence_query, normalize_embeddings=True).tolist()
