@@ -74,7 +74,7 @@ else:
 # COMMAND ----------
 
 diet_query_vintages_directories = \
-    spark.createDataFrame(list(dbutils.fs.ls(config.embedded_dimensions_dir + config.vintages_dir)))
+    config.spark.createDataFrame(list(config.dbutils.fs.ls(config.embedded_dimensions_dir + config.vintages_dir)))
 diet_query_vintages_directories = \
     diet_query_vintages_directories.filter(diet_query_vintages_directories.name.like('sales_%'))
 diet_query_vintages_directories = diet_query_vintages_directories.rdd.map(lambda column: column.name).collect()

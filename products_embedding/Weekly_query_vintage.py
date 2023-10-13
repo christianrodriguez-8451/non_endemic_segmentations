@@ -68,7 +68,7 @@ def get_latest_modified_directory(pDirectory):
     #return the file name that was last modifed in the given directory
     return df_filtered.first()['FullFilePath']
 
-embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
+embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions'
 product_vectors_dir = '/product_vectors_diet_description/cycle_date='
 diet_query_dir = '/diet_query_embeddings'
 vintages_dir = '/customer_data_assets/vintages'

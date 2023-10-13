@@ -21,14 +21,14 @@ for sa in storage_account:
                    f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
 
 # Define root directories and sub directories.
-embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions'
+embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions'
 vintages_dir = '/customer_data_assets/vintages'
 segment_behavior_dir = '/customer_data_assets/segment_behavior'
 azure_pinto_path = 'abfss://data@sa8451entlakegrnprd.dfs.core.windows.net/source/third_party/prd/pinto/'
 azure_pim_core_by_cycle = "abfss://pim@sa8451posprd.dfs.core.windows.net/pim_core/by_cycle/"
 product_vectors_dir = '/product_vectors_diet_description/cycle_date='
 product_vectors_description_path = \
-    "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions/product_vectors_diet_description/"
+    "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/product_vectors_diet_description/"
 diet_query_embeddings_dir = embedded_dimensions_dir + '/diet_query_embeddings/cycle_date='
 diet_query_dir = '/diet_query_embeddings'
 diet_upcs_dir = embedded_dimensions_dir + '/diet_upcs/cycle_date='
