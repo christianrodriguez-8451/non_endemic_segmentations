@@ -45,11 +45,15 @@ if not is_empty:
     embedding_sentence_query = config.spark.createDataFrame(data, columns)
     embedding_sentence_query_lookup_df = embedding_sentence_query_lookup_df.union(embedding_sentence_query)
     # write look up file of upc list location
-    embedding_sentence_query.write.mode("overwrite").format("delta").save(upc_list_path +
-                                                                          '/embedding_sentence_query_lookup')
+    embedding_sentence_query_lookup_df.write.mode("overwrite").format("delta").save(upc_list_path
+                                                                                    +
+                                                                                    '/embedding_sentence_query_lookup')
     print(f'Wrote {embedding_sentence_query} query here: {upc_list_path}')
 else:
     embedding_names = diet_query_embeddings_directories_list
+    embedding_sentence_query_lookup_df.write.mode("overwrite").format("delta").save(config.diet_query_embeddings_dir
+                                                                                    + dates.today +
+                                                                                    '/embedding_sentence_query_lookup')
     for names in embedding_names:
         embedding_sentence_query = \
             embedding_sentence_query_lookup_df.select(embedding_sentence_query_lookup_df.query).where(embedding_sentence_query_lookup_df.name == names)
