@@ -6,7 +6,7 @@ import kayday as kd
 from effodata import ACDS
 
 # get current datetime
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
 
 # internal
@@ -24,6 +24,7 @@ today_year_ago = (datetime.today() - relativedelta(years=1)).strftime('%Y%m%d')
 today = datetime.today().strftime('%Y%m%d')
 today_time = datetime.now()
 duration_time = (today_time + relativedelta(weeks=52))
+yesterday = date.today() - timedelta(days=1)
 # Get current ISO 8601 datetime in string format
 iso_start_date = today_time.isoformat()
 iso_end_date = duration_time.isoformat()
