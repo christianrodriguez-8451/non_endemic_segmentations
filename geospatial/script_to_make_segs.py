@@ -91,7 +91,7 @@ pref_store_and_dna = ((preferred_store
 
 # ehhn and metro
 
-metro_seg = pref_store_and_dna.select("ehhn", "CBSA_TYPE")
+metro_seg = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
 # metro_seg.display()
 
 # COMMAND ----------
@@ -110,7 +110,7 @@ metro_seg.write.mode("overwrite").parquet(config.parquet_storage_micro_metro_non
 # COMMAND ----------
 
 #ehhn and state 
-state_seg = pref_store_and_dna.select("ehhn", "STATE")
+state_seg = pref_store_and_dna.select("ehhn", "STATE").na.drop()
 # state_seg.display()
 
 # COMMAND ----------
@@ -129,7 +129,7 @@ state_seg.write.mode("overwrite").parquet(config.parquet_storage_state)
 # COMMAND ----------
 
 #ehhn and media market 
-media_market_seg = pref_store_and_dna.select("ehhn", "IRI_MEDIA_MKT_NAME")
+media_market_seg = pref_store_and_dna.select("ehhn", "IRI_MEDIA_MKT_NAME").na.drop()
 # media_market_seg.display()
 
 # COMMAND ----------
@@ -147,7 +147,7 @@ media_market_seg.write.mode("overwrite").parquet(config.parquet_storage_media_ma
 
 # COMMAND ----------
 
-cen_region_seg = pref_store_and_dna.select("ehhn", "CEN_REG")
+cen_region_seg = pref_store_and_dna.select("ehhn", "CEN_REG").na.drop()
 
 # COMMAND ----------
 
@@ -164,7 +164,7 @@ cen_region_seg.write.mode("overwrite").parquet(config.parquet_storage_census_reg
 
 # COMMAND ----------
 
-cen_division_seg = pref_store_and_dna.select("ehhn", "CEN_DIV")
+cen_division_seg = pref_store_and_dna.select("ehhn", "CEN_DIV").na.drop()
 
 # COMMAND ----------
 
