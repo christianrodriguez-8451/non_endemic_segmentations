@@ -1,8 +1,9 @@
 # Databricks notebook source
 # Import service principal definitions functions, date calculation and hard coded configs from config
 import resources.config as config
-import products_embedding.src.date_calcs as dates
 import src.utils as utils
+import products_embedding.src.date_calcs as dates
+
 
 # COMMAND ----------
 
