@@ -28,7 +28,7 @@ yesterday = date.today() - timedelta(days=1)
 # Get current ISO 8601 datetime in string format
 iso_start_date = today_time.isoformat()
 iso_end_date = duration_time.isoformat()
-
+dates_tbl = acds.dates.select('trn_dt', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
 
 def pull_from_acds_dates(fw_start, fw_end, additional_cols=None):
     """
@@ -137,3 +137,26 @@ def pull_quarters_for_year(acds, fw_start, fw_end):
                    )
 
     return quarters_df
+
+
+def get_fw(weeks_ago):
+    today = kd.KrogerDate(date='today')
+    weeks_ago_today = today.ago(weeks=weeks_ago)
+    weeks_ago_today_week = weeks_ago_today.format_week()[1:]
+    return weeks_ago_today_week
+
+
+def get_start_date(weeks_ago):
+    today = kd.KrogerDate(date='today')
+    weeks_ago_today = today.ago(weeks=weeks_ago)
+    weeks_ago_today_week = kd.DateRange(weeks_ago_today.format_week())
+    week_start_date = weeks_ago_today_week.start_date.format_cal_date()
+    return week_start_date
+
+
+def get_end_date(weeks_ago):
+    today = kd.KrogerDate(date='today')
+    weeks_ago_today = today.ago(weeks=weeks_ago)
+    weeks_ago_today_week = kd.DateRange(weeks_ago_today.format_week())
+    week_end_date = weeks_ago_today_week.end_date.format_cal_date()
+    return week_end_date

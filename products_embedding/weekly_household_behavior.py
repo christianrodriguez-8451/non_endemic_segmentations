@@ -1,13 +1,3 @@
-# common python packages
-
-# spark packages
-import pyspark.sql.functions as f
-from pyspark.sql import Window
-
-# import internal packages
-from effodata import ACDS, golden_rules
-import kayday as kd
-
 # Import service principal definitions functions, date calculation and hard coded configs from config
 import resources.config as config
 import products_embedding.config as configs
@@ -26,13 +16,6 @@ import products_embedding.src.hmls as hml
 
 # COMMAND ----------
 
-# this doesn't seem to work like get_spark_session... maybe refactor
-acds = ACDS(use_sample_mart=False)
-
-# get current datetime
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-
 end_week_widget = ''
 write_mode = 'overwrite'
 
@@ -48,25 +31,21 @@ if end_week_widget == '':
     # gives 52 weeks of history
     start_week = dates.get_weeks_ago_from_fw(end_week, 51)
     # assign current week an actual value
-    stratum_week = (kd.KrogerDate(year=int(end_week[:4]), 
-                                  period=int(end_week[4:6]), 
-                                  week=int(end_week[6:]), 
-                                  day=1)
+    stratum_week = (utils.kd.KrogerDate(year=int(end_week[:4]), period=int(end_week[4:6]), week=int(end_week[6:]),
+                                        day=1)
                     # move ahead one week for stratum
-                    .ahead(weeks=1).format_week()[1:]
-                   )
+                    .ahead(weeks=1).format_week()[1:])
 elif len(end_week_widget):  # == 8 and end_week_widget.isnumeric():
     # rough check that we have a valid fiscal week. KrogerDate will error if it isn't valid
-    kd.KrogerDate(int(end_week_widget[:4]), int(end_week_widget[4:6]), int(end_week_widget[6:]), 1)
+    utils.kd.KrogerDate(int(end_week_widget[:4]), int(end_week_widget[4:6]), int(end_week_widget[6:]), 1)
 
     # last week
     end_week = dates.get_weeks_ago_from_fw(end_week_widget, 0)
     # gives 52 weeks of history
     start_week = dates.get_weeks_ago_from_fw(end_week, 51)
     # assign current week an actual value
-    stratum_week = (kd.KrogerDate(int(end_week[:4]), int(end_week[4:6]), int(end_week[6:]), 1)
-                        .ahead(weeks=1)
-                        .format_week()[1:]
+    stratum_week = (utils.kd.KrogerDate(int(end_week[:4]), int(end_week[4:6]), int(end_week[6:]), 1
+                                        ).ahead(weeks=1).format_week()[1:]
                    )
 else:
     raiseValueError("please input a valid fiscal week of the form YYYYPPWW")
@@ -96,17 +75,17 @@ for modality_name in modality_list_nonship:
                      .drop('pref_division'))
 
     # pull modality vintage and KPIs
-    full_modality_vintage = ingress.pull_vintages_df(acds, modality_name, None, None, 'hh')
+    full_modality_vintage = ingress.pull_vintages_df(utils.acds, modality_name, None, None, 'hh')
                             
-    full_modality_kpis = ingress.pull_vintages_df(acds, modality_name, None, None, 'sales')
+    full_modality_kpis = ingress.pull_vintages_df(utils.acds, modality_name, None, None, 'sales')
 
     new_hhs_df = segments.pull_new_hhs(full_modality_vintage, start_week, end_week)
 
     lapsed_hhs_df = segments.pull_lapsed_hhs(full_modality_kpis, start_week, end_week)
 
-    quarters_df = dates.pull_quarters_for_year(acds, start_week, end_week)
+    quarters_df = dates.pull_quarters_for_year(utils.acds, start_week, end_week)
 
-    active_modality_kpis = (ingress.pull_vintages_df(acds, modality_name, start_week, end_week, 'sales')
+    active_modality_kpis = (ingress.pull_vintages_df(utils.acds, modality_name, start_week, end_week, 'sales')
                                 .select('ehhn', 'fiscal_week', 'weekly_sales', 'weekly_visits', 'weekly_units'))
 
     # determine who is H/M/L eligible, and who is inactive
@@ -118,14 +97,14 @@ for modality_name in modality_list_nonship:
 
     active_hml_kpis = hml.pull_hml_kpis(active_modality_kpis, preassigned_hml_hhs_df, quarters_df)
 
-    active_ent_quarterly_behavior = hml.pull_ent_quarterly_behavior(acds, start_week, end_week, quarters_df)
+    active_ent_quarterly_behavior = hml.pull_ent_quarterly_behavior(utils.acds, start_week, end_week, quarters_df)
 
     # calling it pillars because it has data for spend and unit penetration (both of the pillars towards overall funlo)
     pillars_df = (hml.combine_pillars(active_hml_kpis, active_ent_quarterly_behavior)
                   # left join because we want to include households without a preferred store
                   .join(preferred_div, 'ehhn', 'left')
                   # we assume they're part of an existing division unless they specifically have
-                  # the encoding of a storeless market. Most of these households are lapsed
+                  # the encoding of a store less market. Most of these households are lapsed
                   .fillna('existing', ['new_market_div']))
 
     qtr_weights_df = utils.create_quarter_weights_df(configs.DATE_RANGE_WEIGHTS)
@@ -151,7 +130,10 @@ for modality_name in modality_list_nonship:
     segment_filepath = config.embedded_dimensions_dir + config.segment_behavior_dir + "/segmentation"
 
     hml_weighted_df = \
-        (spark.read.format("delta").load(weights_filepath).filter(f.col('modality') == modality_name).filter(f.col('stratum_week') == stratum_week))
+        (config.spark.read.format("delta").load(weights_filepath
+                                                ).filter(utils.f.col('modality') ==
+                                                         modality_name).filter(utils.f.col('stratum_week') ==
+                                                                               stratum_week))
 
     hml_hhs_df = hml.create_weighted_segs(hml_weighted_df)
 

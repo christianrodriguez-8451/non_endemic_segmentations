@@ -23,7 +23,8 @@ def pull_vintages_df(acds,
     This function uses the filepaths stored in the config file and pulls data from Vintages.
 
     Inputs:
-    1) acds - ACDS object (see if this can be removed... used to generate list of weeks but now that's in `convert_fw_start_and_end_to_list`)
+    1) acds - ACDS object (see if this can be removed... used to generate list of weeks but now that's in
+    `convert_fw_start_and_end_to_list`)
     2) config - dictionary of config information. Read from json at start of process
     3) modality -
 

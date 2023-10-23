@@ -14,7 +14,7 @@ upc_list_path_api = config.dbutils.widgets.get("upc_list_path_api")
 
 # Set path for product vectors
 if upc_list_path_api:
-    diet_query_embeddings_directories_list = [Path(upc_list_path_api).parts[-1]]
+    diet_query_embeddings_directories_list = [utils.Path(upc_list_path_api).parts[-1]]
     data = [{"path": upc_list_path_api}]
     upc_list_path_lookup = config.spark.createDataFrame(data)
 else:

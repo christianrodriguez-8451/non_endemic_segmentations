@@ -56,7 +56,8 @@ else:
                                                                                     '/embedding_sentence_query_lookup')
     for names in embedding_names:
         embedding_sentence_query = \
-            embedding_sentence_query_lookup_df.select(embedding_sentence_query_lookup_df.query).where(embedding_sentence_query_lookup_df.name == names)
+            embedding_sentence_query_lookup_df.select(embedding_sentence_query_lookup_df.query
+                                                      ).where(embedding_sentence_query_lookup_df.name == names)
         embedding_sentence_query = embedding_sentence_query.rdd.map(lambda column: column.query).collect()
         embedding_sentence_query = " ".join(embedding_sentence_query)
         # Encoding the query, make it a pyspark vector we can take the dot product of later
