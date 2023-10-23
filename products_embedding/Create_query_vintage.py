@@ -33,7 +33,7 @@ else:
 
 for directory_name in diet_query_embeddings_directories_list:
     try:
-        config.fs.ls(config.embedded_dimensions_dir + config.vintages_dir + "/hh_" + directory_name)
+        config.dbutils.fs.ls(config.embedded_dimensions_dir + config.vintages_dir + "/hh_" + directory_name)
         print(config.embedded_dimensions_dir +
               config.vintages_dir + "/hh_" + directory_name + "exists and DOESN'T need to be created")
     except:
