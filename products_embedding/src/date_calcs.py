@@ -28,7 +28,7 @@ yesterday = date.today() - timedelta(days=1)
 # Get current ISO 8601 datetime in string format
 iso_start_date = today_time.isoformat()
 iso_end_date = duration_time.isoformat()
-dates_tbl = acds.dates.select('trn_dt', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
+dates_tbl = utils.acds.dates.select('trn_dt', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year')
 
 def pull_from_acds_dates(fw_start, fw_end, additional_cols=None):
     """
