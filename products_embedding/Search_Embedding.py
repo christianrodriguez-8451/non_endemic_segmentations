@@ -21,9 +21,12 @@ embedding_sentence_query_lookup_df = config.spark.read.format("delta").load(embe
 
 config.dbutils.widgets.text("embedding_name", "")
 config.dbutils.widgets.text("embedding_sentence_query", "")
-embedding_name = "embedding_name"
-embedding_sentence_query = "embedding_sentence_query"
-is_empty = utils.pyspark_databricks_widget_check_for_empty_text_field(embedding_name)
+embedding_name_check = "embedding_name"
+embedding_sentence_query_check = "embedding_sentence_query"
+is_empty = utils.pyspark_databricks_widget_check_for_empty_text_field(embedding_name_check)
+embedding_name = config.dbutils.widgets.get("embedding_name")
+embedding_sentence_query = config.dbutils.widgets.get("embedding_sentence_query")
+
 
 # COMMAND ----------
 
