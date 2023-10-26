@@ -1,4 +1,23 @@
 # Databricks notebook source
+#When you use a job to run your notebook, you will need the service principles
+#You only need to define what storage accounts you are using
+
+#Define service principals
+service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-pw')
+service_application_id = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-app-id')
+directory_id = "5f9dc6bd-f38a-454a-864c-c803691193c5"
+storage_account = 'sa8451dbxadhocprd'
+#storage_account = 'sa8451posprd'
+
+#Set configurations
+spark.conf.set(f"fs.azure.account.auth.type.{storage_account}.dfs.core.windows.net", "OAuth")
+spark.conf.set(f"fs.azure.account.oauth.provider.type.{storage_account}.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+spark.conf.set(f"fs.azure.account.oauth2.client.id.{storage_account}.dfs.core.windows.net", service_application_id)
+spark.conf.set(f"fs.azure.account.oauth2.client.secret.{storage_account}.dfs.core.windows.net", service_credential)
+spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.core.windows.net", f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
+
+# COMMAND ----------
+
 ## Loading External Packages
 import pyspark.sql.functions as f
 import pyspark.sql.types as t
@@ -6,8 +25,8 @@ from datetime import datetime, timedelta, date
 from pyspark.sql.window import Window
 
 ## Loading Internal Packages
+import config as con
 from effodata import ACDS, golden_rules, joiner, sifter, join_on
-
 
 # COMMAND ----------
 
@@ -21,27 +40,15 @@ acds = acds.get_transactions(
   apply_golden_rules=golden_rules('customer_exclusions'),
 )
 
-#Keep only fuel transactions and classify vendor label
+#Keep only fuel transactions and turn gallons into float
 fuel = acds.filter(f.col('wgt_fl') == '3')
-#fuel = fuel.withColumn("store_number", f.col("sto_no").cast("float"))
-#fuel = fuel.withColumn(
-#  'vendor',
-#  when((f.col("store_number")>=80000) & (f.col("store_number")<=89999), 'Shell')
-#    .when((f.col("store_number")>=90000) & (f.col("store_number")<=99999), 'BP')
-#    .when((f.col("store_number")>=70000) & (f.col("store_number")<=79999), 'EG Convenience')
-#    .otherwise("Kroger")
-#)
 fuel = fuel.select( \
   f.col('ehhn'), \
   f.col('gtin_no'), \
   f.col('transactions.gtin_uom_am').alias('gallons'), \
-#  f.col('store_number'), \
-#  f.col('vendor') \
 )
 fuel = fuel.withColumn("gallons", f.col("gallons").cast("float"))
 fuel = fuel.na.drop(subset=["gallons"])
-#fuel = fuel.filter(f.col("vendor") == "Shell")
-#fuel = fuel.select("gtin_no", "vendor", "ehhn", "gallons")
 
 #Bump ACDS against PID to get commmodity + sub-commodity information
 pid_path = "abfss://acds@sa8451posprd.dfs.core.windows.net/product/current"
@@ -51,14 +58,12 @@ pid = pid.dropDuplicates(["gtin_no"])
 fuel = fuel.join(pid, on="gtin_no", how="inner")
 #Third Party Fuel does not distinguish by fuel type (has no descriptive info from PID)
 fuel = fuel.withColumn("sub_commodity_desc",
-                       when(f.col("sub_commodity_desc") == "NO SUBCOMMODITY DESCRIPTION", "GASOLINE-THIRD PARTY")
+                       f.when(f.col("sub_commodity_desc") == "NO SUBCOMMODITY DESCRIPTION", "GASOLINE-THIRD PARTY")
                        .otherwise(f.col("sub_commodity_desc"))
 )
 
 print("Fuel Data Sample:\n")
 fuel.show(25, truncate=False)
-#upcs = fuel.select("gtin_no").distinct()
-#upcs.show()
 
 # COMMAND ----------
 
@@ -66,10 +71,14 @@ fuel.show(25, truncate=False)
 #Third Party Fuel does not tell us fuel type - considering them altogether
 #is an attempt to get value out of our third party fuel data
 allfuel = fuel.alias("allfuel")
-allfuel = allfuel.withColumn("sub_commodity_desc", lit("GASOLINE"))
+allfuel = allfuel.withColumn("sub_commodity_desc", f.lit("GASOLINE"))
 data = fuel.union(allfuel)
 data.cache()
 
+#cyc_date = dt.date.today().strftime('%Y-%m-%d')
+cyc_date = "2023-10-27"
+cyc_date = "cycle_date={}".format(cyc_date)
+output_dir = con.output_fp + cyc_date
 #For each gas type (and also all of them altogether), split the households into L, M, and H propensities
 gas_types = ["GASOLINE", "GASOLINE-PREMIUM UNLEADED", "GASOLINE-REG UNLEADED", "GASOLINE-UNLEADED PLUS", "GASOLINE-THIRD PARTY"]
 for gas_type in gas_types:
@@ -85,8 +94,8 @@ for gas_type in gas_types:
   percentiles = df.approxQuantile("gallons", [0.33, 0.66], 0.00001)
   df = df.withColumn(
     "segmentation",
-    when(f.col("gallons") < percentiles[0], "L")
-        .otherwise(when(col("gallons") > percentiles[1], "H")
+    f.when(f.col("gallons") < percentiles[0], "L")
+        .otherwise(f.when(f.col("gallons") > percentiles[1], "H")
                   .otherwise("M"))
   )
 
@@ -99,4 +108,8 @@ for gas_type in gas_types:
   avgs.show()
 
   #Write-out
-  #For third party gas, take out Krogees
+  if gas_type not in ["GASOLINE-THIRD PARTY"]:
+    fn = gas_type.replace("-", "_")
+    fn = fn.replace(" ", "_")
+    output_fp =  output_dir + "/" + fn
+    df.write.mode("overwrite").format("delta").save(output_fp)
