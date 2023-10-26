@@ -107,6 +107,18 @@ prefstore_dna_micro_metro_nonmetro = groupby_count_perc(metro_seg, "CBSA_TYPE", 
 
 # COMMAND ----------
 
+prefstore_dna_micro_metro_nonmetro.display()
+
+# COMMAND ----------
+
+# removing nulls 
+
+metro_seg = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
+prefstore_dna_micro_metro_nonmetro = groupby_count_perc(metro_seg, "CBSA_TYPE", "ehhn", "prefstore_dna")
+prefstore_dna_micro_metro_nonmetro.display()
+
+# COMMAND ----------
+
 # MAGIC %md 
 # MAGIC ## state
 
