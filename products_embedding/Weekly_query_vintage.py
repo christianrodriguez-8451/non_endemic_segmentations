@@ -23,22 +23,22 @@ for modality_name in config.modality_list_nonship:
                                           f'{config.embedded_dimensions_dir}{config.vintages_dir}/hh_{modality_name}'
                                           ).parquet(
             f'{config.embedded_dimensions_dir}{config.vintages_dir}/hh_{modality_name}/v*'
-                                                    ).where(config.f.col('vintage_week') < fw)
+                                                    ).where(utils.f.col('vintage_week') < fw)
     
     og_trans_agg_vintage = \
         config.spark.read.parquet(f'{config.embedded_dimensions_dir}{config.vintages_dir}/sales_{modality_name}'
-                                  ).where(config.f.col('fiscal_week') < fw)
+                                  ).where(utils.f.col('fiscal_week') < fw)
     # Pull basket information (sales, units, visits) for the given modality from the week we want to look at
 
     if modality_name == 'enterprise':
-        df_modality_baskets = config.kpi.get_aggregate(
+        df_modality_baskets = utils.kpi.get_aggregate(
             start_date=start_date,
             end_date=end_date,
             metrics=["sales", "gr_visits", "units"],
             join_with='stores',
-            apply_golden_rules=config.golden_rules(),
+            apply_golden_rules=utils.golden_rules(),
             group_by=["ehhn", "trn_dt", "geo_div_no"],
-        ).where(config.f.col('ehhn').isNotNull())
+        ).where(utils.f.col('ehhn').isNotNull())
     else:
         # For this to run the latest UPC list for this week, we need to know the location of the latest segment's UPC
         # list.  When a UPC list is created by the API, it writes a lookup file with the path to where the UPC list is.
@@ -52,36 +52,36 @@ for modality_name in config.modality_list_nonship:
         upc_list_path_url = upc_list_path_location.select(upc_list_path_location.path)
         upc_list_path_url = upc_list_path_url.rdd.map(lambda column: column.path).collect()
         upc_list_path_url = " ".join(upc_list_path_url)
-        segment = [config.Path(upc_list_path_url).parts[-1]]
+        segment = [utils.Path(upc_list_path_url).parts[-1]]
         segment = " ".join(segment)
-        upc_list_path_url_root = config.Path(upc_list_path_url).parents[1]
+        upc_list_path_url_root = utils.Path(upc_list_path_url).parents[1]
         upc_list_path_url_root = \
             config.get_latest_modified_directory(upc_list_path_url_root.as_posix().replace('abfss:/', 'abfss://'))
         upc_list_path_url_newest = f'{upc_list_path_url_root}{segment}'
         upc_latest_location = config.spark.read.format("delta").load(upc_list_path_url_newest)
         
-        df_modality_baskets = config.kpi.get_aggregate(
+        df_modality_baskets = utils.kpi.get_aggregate(
             start_date=start_date,
             end_date=end_date,
             metrics=["sales", "gr_visits", "units"],
             join_with='stores',
-            apply_golden_rules=config.golden_rules(),
+            apply_golden_rules=utils.golden_rules(),
             group_by=["ehhn", "trn_dt", "geo_div_no"],
-            filter_by=config.Sifter(upc_latest_location, join_cond=config.Equality("gtin_no"), method="include")
-        ).where(config.f.col('ehhn').isNotNull())
+            filter_by=utils.Sifter(upc_latest_location, join_cond=utils.Equality("gtin_no"), method="include")
+        ).where(utils.f.col('ehhn').isNotNull())
   
     # Aggregate by hh and fiscal week to get weekly sales, units, and visits data for the modality
     trans_agg = \
         (df_modality_baskets.join(dates.dates_tbl, 'trn_dt', 'inner'
                                   ).groupBy('ehhn', 'fiscal_week', 'fiscal_month', 'fiscal_quarter', 'fiscal_year'
-                                            ).agg(config.f.sum('sales'
+                                            ).agg(utils.f.sum('sales'
                                                                ).alias('weekly_sales'
                                                                        ),
-                                                  config.f.sum('units').alias('weekly_units'),
-                                                  config.f.sum('gr_visits').alias('weekly_visits')))
+                                                  utils.f.sum('units').alias('weekly_units'),
+                                                  utils.f.sum('gr_visits').alias('weekly_visits')))
 
     # Find the minimum visit date in our new data pull
-    ehhn_min_dt = df_modality_baskets.groupBy('ehhn').agg(config.f.min('trn_dt').alias('trn_dt'))
+    ehhn_min_dt = df_modality_baskets.groupBy('ehhn').agg(utils.f.min('trn_dt').alias('trn_dt'))
     # Find the division associated with each hh's first shop in our pull
     ehhn_div_min = df_modality_baskets.join(ehhn_min_dt, how='inner', on=['ehhn', 'trn_dt'])
 
@@ -91,16 +91,16 @@ for modality_name in config.modality_list_nonship:
         (ehhn_div_min.join(dates.dates_tbl, 'trn_dt', 'inner'
                            ).orderBy('trn_dt'
                                      ).groupBy('ehhn'
-                                               ).agg(config.f.first('geo_div_no'
+                                               ).agg(utils.f.first('geo_div_no'
                                                                     ).alias('vintage_div'
                                                                             ),
-                                                     config.f.min('fiscal_week').alias('fiscal_week')))
+                                                     utils.f.min('fiscal_week').alias('fiscal_week')))
   
     # Find households that are in the new data who don't have a prior vintage, and get their vintage week
     # (still called fiscal week at this stage)
     og_hh_vintage_ehhn = og_hh_vintage.select('ehhn')
-    new_hhs = trans_agg.join(og_hh_vintage_ehhn, 'ehhn', 'leftanti').where(config.f.col('weekly_visits') > 0)
-    hhs_min_week = (new_hhs.groupBy('ehhn').agg(config.f.min('fiscal_week').alias('fiscal_week')))
+    new_hhs = trans_agg.join(og_hh_vintage_ehhn, 'ehhn', 'leftanti').where(utils.f.col('weekly_visits') > 0)
+    hhs_min_week = (new_hhs.groupBy('ehhn').agg(utils.f.min('fiscal_week').alias('fiscal_week')))
   
     # Pull all vintage information for new hhs
     hh_vintage = \
