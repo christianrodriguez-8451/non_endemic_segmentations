@@ -1,4 +1,20 @@
 # Databricks notebook source
+"""
+Pulls in the most recent year of fuel transaction data via ACDS and
+appends to it the PID file from the latest cycle to get sub-commodity designation.
+For each of the fuel types, the households are ranked L, M, or H depending on how
+many gallons of fuel they purchased. If the household purchased < the 33rd percentile,
+then they are assigned to L. If the household purchased > 66th percentile, then they
+are assigned to H. Otherwise, they are assigned M.
+
+We repeat a similar methodology with the all-inclusive fuel segmentation. The value of
+all-inclusive fuel is that it also considers 3rd party fuel providers. We could not
+consider 3rd party fuel in the fuel types segmentation because 3rd party fuel does
+not distinguish between fuel types.
+"""
+
+# COMMAND ----------
+
 #When you use a job to run your notebook, you will need the service principles
 #You only need to define what storage accounts you are using
 
