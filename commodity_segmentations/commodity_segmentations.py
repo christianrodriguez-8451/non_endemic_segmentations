@@ -1,15 +1,11 @@
 # Databricks notebook source
 """
-Reads in the commodity-segments control file and pulls in a year of the most recent
-year of transaction data via ACDS. For each segmentation listed in the control file, a list
+Reads in the commodity-segments dictionary from config.py and pulls in a year of the most recent
+year of transaction data via ACDS. For each segmentation listed in the dictionary, a list
 of UPCs (gtin_no) is created by pulling from ACDS all the UPCs that fall under the
 given commodities and sub-commodities. PID is utilized to designate every UPC their
 commodity and sub-commodity label. The final output is a delta file with gtin_no
 as the only column.
-
-Notes
-  The control file is a comma separated file that contains the following
-  columns: segmentation, commodities, sub-commodities, and weeks.
 """
 
 # COMMAND ----------
@@ -41,50 +37,7 @@ import pyspark.sql.functions as f
 import pandas as pd
 
 #Read in your control file (for each segment, specifies which commodities and sub-commodities it is made of)
-con_fp = con.control_fp
-segments_df = spark.read.csv(con_fp, sep=",", header=True)
-segments_df = segments_df.toPandas()
-segments_df = segments_df.loc[~segments_df["segmentation"].isna(), :]
-
-#Process control file into dictionary for easier handling
-segments_dict = {}
-for n in range(0, len(list(segments_df["segmentation"]))):
-  
-  #Column order is assumed to be segment, commodities, sub-commodities, weeks.
-  segment = segments_df.iat[n, 0]
-  segment = segment.strip()
-  segment = segment.lower()
-  segment = segment.replace(" ", "_")
-  segment = segment.replace("+", "and")
-
-  #The columns with lists of strings are delimited by pipe and
-  #commodities/sub-commodities are capitalized within PID.
-  str_delim = "|"
-
-  commodities = segments_df.iat[n, 1]
-  if not commodities == None:
-    commodities = commodities.split(str_delim)
-    commodities = [c.strip() for c in commodities]
-    commodities = [c.upper() for c in commodities]
-  else:
-    commodities = []
-
-  sub_commodities = segments_df.iat[n, 2]
-  if not sub_commodities == None:
-    sub_commodities = sub_commodities.split(str_delim)
-    sub_commodities = [c.strip("") for c in sub_commodities]
-    sub_commodities = [c.upper() for c in sub_commodities]
-  else:
-    sub_commodities = []
-
-  weeks =  int(segments_df.iat[n, 3])
-
-  segments_dict[segment] = {
-    "commodities": commodities,
-    "sub_commodities": sub_commodities,
-    "weeks": weeks,
-  }
-  del(segment, commodities, sub_commodities)
+segments_dict = con.commodity_segmentations
 
 #Define the time range of data that you are pulling
 max_weeks = 52
@@ -137,6 +90,7 @@ del(my_comms, my_subs)
 
 #Create the directory where the segment UPCs are going to land
 cyc_date = dt.date.today().strftime('%Y-%m-%d')
+#cyc_date = "2023-11-03"
 cyc_date = "cycle_date={}".format(cyc_date)
 output_dir = con.output_fp + cyc_date
 if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
