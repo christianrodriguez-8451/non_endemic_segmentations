@@ -91,7 +91,7 @@ allfuel = allfuel.withColumn("sub_commodity_desc", f.lit("GASOLINE"))
 data = fuel.union(allfuel)
 data.cache()
 
-cyc_date = dt.date.today().strftime('%Y-%m-%d')
+cyc_date = date.today().strftime('%Y-%m-%d')
 #Below is the line I use to hot fix a specific cycle
 #cyc_date = "2023-11-03"
 cyc_date = "cycle_date={}".format(cyc_date)
