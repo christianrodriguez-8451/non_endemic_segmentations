@@ -21,5 +21,3 @@ parquet_storage_state = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/j4
 parquet_storage_media_market = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/j468635/geospatial/parquet/media_market/'
 parquet_storage_census_region = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/j468635/geospatial/parquet/census_region/'
 parquet_storage_census_division = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/j468635/geospatial/parquet/census_division/'
-
-#Include output filepath for travelers and roadies

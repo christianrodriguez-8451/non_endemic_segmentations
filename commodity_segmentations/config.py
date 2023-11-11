@@ -9,7 +9,7 @@ output_fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_facto
 #Where the exploratory household analysis lands
 hh_counts_fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/household_counts/"
 
-#Dictionary used to define each segmentations commodities, sub-commodities, weeks, and deployment status
+#Dictionary used to define each segmentation's commodities, sub-commodities, weeks, and deployment status
 commodity_segmentations = {
   'asian_cuisine': {
     'frontend_name': '',
@@ -381,3 +381,6 @@ commodity_segmentations = {
     'live': False,
   }
 }
+
+#Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
+percentile_segmentations = []
