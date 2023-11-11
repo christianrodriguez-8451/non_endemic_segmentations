@@ -110,15 +110,15 @@ for gas_type in gas_types:
   #L := low, M := medium, H := High
   percentiles = df.approxQuantile("gallons", [0.33, 0.66], 0.00001)
   df = df.withColumn(
-    "segmentation",
+    "segment",
     f.when(f.col("gallons") < percentiles[0], "L")
         .otherwise(f.when(f.col("gallons") > percentiles[1], "H")
                   .otherwise("M"))
   )
 
   #To QC the methodology
-  counts = df.groupBy("segmentation").count()
-  avgs = df.groupBy("segmentation").agg(f.avg(f.col("gallons")).alias("average_gallons"))
+  counts = df.groupBy("segment").count()
+  avgs = df.groupBy("segment").agg(f.avg(f.col("gallons")).alias("average_gallons"))
   print(f"{gas_type} Counts:\n")
   counts.show()
   print(f"{gas_type} Averages:\n")
