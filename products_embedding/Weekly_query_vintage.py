@@ -58,7 +58,13 @@ for modality_name in config.modality_list_nonship:
         upc_list_path_url_root = \
             config.get_latest_modified_directory(upc_list_path_url_root.as_posix().replace('abfss:/', 'abfss://'))
         upc_list_path_url_newest = f'{upc_list_path_url_root}{segment}'
-        upc_latest_location = config.spark.read.format("delta").load(upc_list_path_url_newest)
+        try:
+            upc_latest_location = config.spark.read.format("delta").load(upc_list_path_url_newest)
+            print(upc_latest_location + "exists and will be published")
+        except:
+            print(upc_latest_location + " doesn't exist and needs to be skipped")
+            config.modality_list_nonship.next()
+            continue
         
         df_modality_baskets = utils.kpi.get_aggregate(
             start_date=start_date,
