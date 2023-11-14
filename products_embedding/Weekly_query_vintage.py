@@ -60,9 +60,9 @@ for modality_name in config.modality_list_nonship:
         upc_list_path_url_newest = f'{upc_list_path_url_root}{segment}'
         try:
             upc_latest_location = config.spark.read.format("delta").load(upc_list_path_url_newest)
-            print(upc_latest_location + "exists and will be published")
+            print(upc_list_path_url_newest + "exists and will be published")
         except:
-            print(upc_latest_location + " doesn't exist and needs to be skipped")
+            print(upc_list_path_url_newest + " doesn't exist and needs to be skipped")
             config.modality_list_nonship.next()
             continue
         
