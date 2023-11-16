@@ -1,5 +1,25 @@
 # Databricks notebook source
 """
+Creates the travelers and roadies segmentations by looking at the last
+52 weeks of transaction data.
+
+Travelers are households that were found on a significant trip.
+A significant trip is defined as a household making a purchase at
+a store that is at least 250km away from their preferred store.
+Within travelers, a household was given H propensity if they
+went on 2 unique significant trips. 
+
+Roadies are households that satisfy one of two conditions:
+  
+  1) The household was on a significant trip and they were
+  found to be purchasing fuel.
+
+  2) The houeshold is in the top 90th percentile of
+  all-inclusive fuel gallon purchasers.
+
+Within roadies, a household was given H propensity if they
+satisfied both conditions. Otherwise, they were given a 
+M propensity.
 """
 
 # COMMAND ----------
@@ -85,20 +105,20 @@ store_dna = store_dna.select(
 )
 store_dna = store_dna.dropDuplicates()
 
-print("Number of entries in ehhn_trips before merging with Store DNA: {}".format(ehhn_trips.count()))
+#print("Number of entries in ehhn_trips before merging with Store DNA: {}".format(ehhn_trips.count()))
 ehhn_trips = ehhn_trips.join(
   store_dna,
   on="store_code",
   how="inner",
 )
-print("Number of entries in ehhn_trips after merging with Store DNA: {}".format(ehhn_trips.count()))
-print("Number of entries in Preferred Store before merging with Store DNA: {}".format(preferred_store.count()))
+#print("Number of entries in ehhn_trips after merging with Store DNA: {}".format(ehhn_trips.count()))
+#print("Number of entries in Preferred Store before merging with Store DNA: {}".format(preferred_store.count()))
 preferred_store = preferred_store.join(
   store_dna,
   preferred_store["pref_store_code"] == store_dna["store_code"],
   how="inner",
 )
-print("Number of entries in Preferred Store after merging with Store DNA: {}".format(preferred_store.count()))
+#print("Number of entries in Preferred Store after merging with Store DNA: {}".format(preferred_store.count()))
 preferred_store = preferred_store.withColumnRenamed('longitude', 'pref_longitude')
 preferred_store = preferred_store.withColumnRenamed('latitude', 'pref_latitude')
 preferred_store = preferred_store.select(
@@ -116,7 +136,7 @@ ehhn_trips = ehhn_trips.join(
   how="inner",
 )
 ehhn_trips = ehhn_trips.filter(ehhn_trips["pref_store_code"] != ehhn_trips["store_code"])
-print("Number of entries in ehhn_trips after merging with Preferred Store and keeping only non-Preferred entries: {}".format(ehhn_trips.count()))
+#print("Number of entries in ehhn_trips after merging with Preferred Store and keeping only non-Preferred entries: {}".format(ehhn_trips.count()))
 
 # COMMAND ----------
 
@@ -211,7 +231,7 @@ print(f"Count of households found on a significant trip (travelers): {travelers.
 
 #Roadie condition 1 - found purchasing fuel on a significant trip
 #Merge the travelers against their trips to ge their complete history of significant trips
-roadies1 = roadies1.select("ehhn")
+roadies1 = travelers.select("ehhn")
 roadies1 = roadies1.join(ehhn_trips.select("ehhn", "store_code", "transaction_code", "significant_distance"),
                         on=["ehhn"],
                         how="inner")
@@ -232,9 +252,12 @@ print(f"Count of households found purchasing fuel while on a significant trip: {
 
 # COMMAND ----------
 
+from commodity_segmentations.config import output_fp as fuel_fp
+
 #Roadie condition 2 - in top 90th percentile of fuel purchases
 #Read in segmentation file for all-inclusive fuel segmentation
-fuel = 
+fuel_fp = fuel_fp + "fuel_segmentations/gasoline/gasoline_20231110"
+fuel = spark.read.format("delta").load(fuel_fp)
 
 #Keep only households in top 90th percentile of fuel purchases
 cut_off = fuel.approxQuantile("gallons", [0.90], 0.01)
@@ -257,10 +280,33 @@ print(f"Count of households found purchasing fuel on a significant trip AND in t
 
 # COMMAND ----------
 
+#today = "20231117"
+today = today.strftime('%Y%m%d')
+
 #Create and out the segmentation files for travelers and roadies
 #Travelers - H for households who went on atleast 2 unique significant trips,
 #            M for households who went on 1 unique significant trip
-
+travelers = travelers.withColumn(
+  "segment",
+  f.when(f.col("unique_significant_trips") >= 2, "H").otherwise("M")
+)
+travelers = travelers.select("ehhn", "segment")
+#travelers.show(5, truncate=False)
+output_fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/travelers/travelers_{today}"
+travelers.write.mode("overwrite").format("delta").save(output_fp)
 
 #Roadies - H for households that are super roadies
 #          M for households that satisfy one of the two conditions
+super_roadies = super_roadies.select("ehhn").dropDuplicates()
+super_roadies = super_roadies.withColumn("segment", f.lit("H"))
+
+roadies = roadies1.select("ehhn")
+roadies = roadies.union(roadies2.select("ehhn"))
+roadies = roadies.dropDuplicates()
+roadies = roadies.join(super_roadies, on="ehhn", how="left_outer")
+roadies = roadies.withColumn("segment", f.lit("M"))
+
+roadies = super_roadies.union(roadies)
+#roadies.show(5, truncate=False)
+output_fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/roadies/roadies_{today}"
+roadies.write.mode("overwrite").format("delta").save(output_fp)
