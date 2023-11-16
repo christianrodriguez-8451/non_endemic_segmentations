@@ -70,26 +70,42 @@ fp = get_latest_modified_directory(seg_dir)
 
 # COMMAND ----------
 
-#Read-in appropiate stratum file
 #Took out heart_friendly since not found (10.12.2023)
-segs = [
-  "free_from_gluten", "grain_free", "healthy_eating", "heart_friendly",
-  "ketogenic", "kidney-friendly", "lactose_free", "low_bacteria", "paleo",
-  "vegan", "vegetarian",
-]
-batch2 = [
-  "beveragist", "breakfast_buyers", "hispanic_cuisine",
-  "low_fodmap", "low_protein", "low_salt", "macrobiotic",
-  "mediterranean_diet", "non_veg", "organic", "salty_snackers",
-  "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded",
-]
-segs += batch2
+from commodity_segmentations import percentile_segmentations
+segmentations = {
+  "funlo": [
+    "free_from_gluten", "grain_free", "healthy_eating", "heart_friendly",
+    "ketogenic", "kidney-friendly", "lactose_free", "low_bacteria", "paleo",
+    "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine",
+    "low_fodmap", "mediterranean_diet", "organic", "salty_snackers",
+    "non_veg", "low_salt", "low_protein", "heart_friendly", "macrobiotic",
+    ],
+  "percentile": percentile_segmentations,
+  "fuel": ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"],
+}
+filepaths = {
+  "funlo": "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality={}/",
+  "percentile": "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/percentile_segmentations/{}/",
+  "fuel": "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/fuel_segmentations/{}/",
+}
 
+segs = segmentations["funlo"] + segmentations["percentile"] + segmentations["fuel"]
 for seg in segs:
-  try:
+  #try:
     #Read in latest directory of segment
-    seg_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality={}/".format(seg)
-    fp = get_latest_modified_directory(seg_dir)
+    if seg in segmentations["funlo"]:
+      fp = filepaths["funlo"].format(seg)
+      fp = get_latest_modified_directory(fp)
+
+    elif seg in segmentations["fuel"]:
+      fp = filepaths["fuel"].format(seg)
+      fp = get_latest_modified_directory(fp)
+
+    elif seg in segmentations["percentile"]:
+      fp = filepaths["percentile"].format(seg)
+      fp = get_latest_modified_directory(fp)
+
+    
     print("Latest directory is {}!".format(fp))
 
     #Keep only ehhn and segment
@@ -102,10 +118,10 @@ for seg in segs:
 
     #Write out to the egress directory and write out in format that engineering expects
     egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
-    today = "20231110"
+    today = "20231120"
     dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
     stratum.write.mode("overwrite").format("parquet").save(dest_fp)
     print("SUCCESS: Wrote out to {} successfully!".format(dest_fp))
 
-  except:
-    print("ALERT: Could not find input data for {}!".format(seg))
+  #except:
+  #  print("ALERT: Could not find input data for {}!".format(seg))
