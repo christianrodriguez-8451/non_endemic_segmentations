@@ -89,6 +89,10 @@ pref_store_and_dna = ((preferred_store
 
 # COMMAND ----------
 
+print(config.metro_micro_nonmetro_dir)
+
+# COMMAND ----------
+
 # ehhn and metro
 
 metro_seg = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
@@ -96,7 +100,7 @@ metro_seg = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
 
 # COMMAND ----------
 
-metro_seg.write.mode("overwrite").format("delta").save(config.storage_micro_metro_nonmetro)
+metro_seg.write.mode("overwrite").format("delta").save(config.metro_micro_nonmetro_dir)
 
 # COMMAND ----------
 
