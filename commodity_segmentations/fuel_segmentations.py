@@ -91,11 +91,9 @@ allfuel = allfuel.withColumn("sub_commodity_desc", f.lit("GASOLINE"))
 data = fuel.union(allfuel)
 data.cache()
 
-cyc_date = date.today().strftime('%Y-%m-%d')
+cyc_date = date.today().strftime('%Y%m%d')
 #Below is the line I use to hot fix a specific cycle
-#cyc_date = "2023-11-03"
-cyc_date = "cycle_date={}".format(cyc_date)
-output_dir = con.output_fp + cyc_date
+#cyc_date = "20231110"
 #For each gas type (and also all of them altogether), split the households into L, M, and H propensities
 gas_types = ["GASOLINE", "GASOLINE-PREMIUM UNLEADED", "GASOLINE-REG UNLEADED", "GASOLINE-UNLEADED PLUS", "GASOLINE-THIRD PARTY"]
 for gas_type in gas_types:
@@ -126,8 +124,12 @@ for gas_type in gas_types:
 
   #Write-out
   if gas_type not in ["GASOLINE-THIRD PARTY"]:
-    fn = gas_type.replace("-", "_")
-    fn = fn.replace(" ", "_")
-    fn = fn.lower()
-    output_fp =  output_dir + "/" + fn
+    g = gas_type.replace("-", "_")
+    g = g.replace(" ", "_")
+    g = g.lower()
+    output_fp =  f"{con.output_fp}fuel_segmentations/{g}/{g}_{cyc_date}"
     df.write.mode("overwrite").format("delta").save(output_fp)
+
+# COMMAND ----------
+
+

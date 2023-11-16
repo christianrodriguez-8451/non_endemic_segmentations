@@ -89,10 +89,9 @@ all_gtins.cache()
 del(my_comms, my_subs)
 
 #Create the directory where the segment UPCs are going to land
-cyc_date = dt.date.today().strftime('%Y-%m-%d')
-#cyc_date = "2023-11-03"
-cyc_date = "cycle_date={}".format(cyc_date)
-output_dir = con.output_fp + cyc_date
+cyc_date = dt.date.today().strftime('%Y%m%d')
+#cyc_date = "20231110"
+output_dir = con.output_fp
 if not (cyc_date in list(dbutils.fs.ls(con.output_fp))):
   dbutils.fs.mkdirs(output_dir)
 
@@ -119,7 +118,8 @@ for s in list(segments_dict.keys()):
   print(message)
   
   #Write-out the file
-  output_fp =  output_dir + "/" + s
+  output_fp =  f'{output_dir}upc_lists/{s}/{s}_{cyc_date}'
   segment_gtins.write.mode("overwrite").format("delta").save(output_fp)
+  print(output_fp)
     
   del(comms, sub_comms, n_weeks, segment_gtins)

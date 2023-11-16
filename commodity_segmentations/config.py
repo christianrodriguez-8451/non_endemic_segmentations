@@ -4,7 +4,7 @@
 #Proposal - create prd, tst, and dev directories on Azure to facilitate easy testing + development
 
 #Where the commodity-segment's output lands
-output_fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/output/"
+output_fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/"
 
 #Where the exploratory household analysis lands
 hh_counts_fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/household_counts/"
@@ -383,4 +383,7 @@ commodity_segmentations = {
 }
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
-percentile_segmentations = []
+percentile_segmentations = [
+  "fitness_enthusiast", "beautists", "beverage_enchancers",
+  "summer_bbq", "convenient_breakfast", "energy_beveragist", "indoor_décor_and_gardening",
+]
