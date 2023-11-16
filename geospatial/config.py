@@ -4,5 +4,4 @@
 # DELTA FILES
 
 geospatial_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/geospatial/"
-metro_micro_nonmetro_dir = geospatial_dir + "/metro_micro_nonmetro/"
-
+metro_micro_nonmetro_dir = geospatial_dir + "metro_micro_nonmetro/"
