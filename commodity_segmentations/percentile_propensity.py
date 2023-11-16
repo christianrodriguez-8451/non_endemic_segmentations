@@ -61,8 +61,20 @@ my_schema = t.StructType([
     t.StructField("segmentation", t.StringType(), True)
 ])
 seg_upcs = spark.createDataFrame([], schema=my_schema)
+seg_timestamps = {}
 for s in segs:
-  seg_fp = f"{con.output_fp}upc_lists/{s}/{s}_20231110"
+  #Get latest upc file of each segmentation
+  #Also get timestamp to keep upc_lists and percentile_segmentations in sync
+  seg_dir = f"{con.output_fp}upc_lists/{s}/"
+  dir_contents = dbutils.fs.ls(seg_dir)
+  dir_contents = [x[0] for x in dir_contents if s in x[1]]
+  dir_contents.sort()
+  seg_fp = dir_contents[-1]
+  seg_timestamp = seg_fp.split(f"{s}_")
+  seg_timestamp = seg_timestamp[1]
+  seg_timestamp = seg_timestamp.strip("/")
+  seg_timestamps[s] = seg_timestamp
+
   df = spark.read.format("delta").load(seg_fp)
   df = df.withColumn("segmentation", f.lit(s))
   seg_upcs = seg_upcs.union(df)
@@ -74,9 +86,6 @@ dollars_spent = dollars_spent.groupBy("segmentation", "ehhn").agg(f.sum("net_spe
 dollars_spent.cache()
 
 # COMMAND ----------
-
-today = today.strftime('%Y%m%d')
-#today = "20231115"
 
 for s in segs:
   #Slice out each segmentation and get 33rd/66th percentiles
@@ -95,6 +104,8 @@ for s in segs:
   print(temp.show(5, truncate=False))
 
   #Write-out
+  today = seg_timestamps[s]
+  #today = "20231115"
   df = df.select("ehhn", "segment", "dollars_spent")
   fp = f'{con.output_fp}percentile_segmentations/{s}/{s}_{today}'
   df.write.mode("overwrite").format("delta").save(fp)

@@ -384,6 +384,6 @@ commodity_segmentations = {
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
 percentile_segmentations = [
-  "fitness_enthusiast", "beautists", "beverage_enchancers",
+  "fitness_enthusiast", "beautists", "beverage_enchancers", "back-to-school",
   "summer_bbq", "convenient_breakfast", "energy_beveragist", "indoor_décor_and_gardening",
 ]
