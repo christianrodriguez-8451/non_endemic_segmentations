@@ -120,11 +120,11 @@ pref_store_and_dna = ((preferred_store
 
 # COMMAND ----------
 
-output_path_metro_micro = f'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/metro_micro_nonmetro/metro_micro_{today_date}'
+# output_path_metro_micro = f'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/metro_micro_nonmetro/metro_micro_{today_date}'
 
 # COMMAND ----------
 
-# output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/metro_micro_{today_date}"
+output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/metro_micro_{today_date}"
 
 # COMMAND ----------
 
