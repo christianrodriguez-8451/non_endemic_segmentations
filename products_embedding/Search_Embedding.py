@@ -24,9 +24,6 @@ config.dbutils.widgets.text("embedding_sentence_query", "")
 embedding_name_check = "embedding_name"
 embedding_sentence_query_check = "embedding_sentence_query"
 is_empty = utils.pyspark_databricks_widget_check_for_empty_text_field(embedding_name_check)
-embedding_name = config.dbutils.widgets.get("embedding_name")
-embedding_sentence_query = config.dbutils.widgets.get("embedding_sentence_query")
-
 
 # COMMAND ----------
 
@@ -34,6 +31,8 @@ embedding_sentence_query = config.dbutils.widgets.get("embedding_sentence_query"
 # order by dot product descending
 
 if not is_empty:
+    embedding_name = config.dbutils.widgets.get("embedding_name")
+    embedding_sentence_query = config.dbutils.widgets.get("embedding_sentence_query")
     embedding_sentence_query = ''.join(embedding_sentence_query).lower()
     # Encoding the query, make it a pyspark vector we can take the dot product of later
     query_vector = utils.model.encode(embedding_sentence_query, normalize_embeddings=True).tolist()
@@ -58,13 +57,14 @@ else:
                                                                                     + dates.today +
                                                                                     '/embedding_sentence_query_lookup')
     for names in embedding_names:
-        embedding_sentence_query = \
+        saved_embedding_sentence_query = \
             embedding_sentence_query_lookup_df.select(embedding_sentence_query_lookup_df.query
                                                       ).where(embedding_sentence_query_lookup_df.name == names)
-        embedding_sentence_query = embedding_sentence_query.rdd.map(lambda column: column.query).collect()
-        embedding_sentence_query = " ".join(embedding_sentence_query)
+        saved_embedding_sentence_query = saved_embedding_sentence_query.rdd.map(lambda column: column.query).collect()
+        saved_embedding_sentence_query = " ".join(saved_embedding_sentence_query)
         # Encoding the query, make it a pyspark vector we can take the dot product of later
-        query_vector = utils.model.encode(embedding_sentence_query, normalize_embeddings=True).tolist()
+        print(f'Encoding ({saved_embedding_sentence_query}) as the embedding sentence query for: {names}')
+        query_vector = utils.model.encode(saved_embedding_sentence_query, normalize_embeddings=True).tolist()
         search_df = utils.create_search_df(utils.create_dot_df(product_vectors_df,
                                                                utils.create_array_query(query_vector)))
         names = names.replace(' ', '_')
