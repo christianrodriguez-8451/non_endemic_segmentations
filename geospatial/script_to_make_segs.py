@@ -150,7 +150,7 @@ state_seg = pref_store_and_dna.select("ehhn", "STATE").na.drop()
 
 # COMMAND ----------
 
-state_seg.write.mode("overwrite").format("delta").save(config.storage_state)
+# state_seg.write.mode("overwrite").format("delta").save(config.storage_state)
 
 # COMMAND ----------
 
@@ -165,7 +165,7 @@ media_market_seg = pref_store_and_dna.select("ehhn", "IRI_MEDIA_MKT_NAME").na.dr
 
 # COMMAND ----------
 
-media_market_seg.write.mode("overwrite").format("delta").save(config.storage_media_market)
+# media_market_seg.write.mode("overwrite").format("delta").save(config.storage_media_market)
 
 # COMMAND ----------
 
@@ -178,7 +178,7 @@ cen_region_seg = pref_store_and_dna.select("ehhn", "CEN_REG").na.drop()
 
 # COMMAND ----------
 
-cen_region_seg.write.mode("overwrite").format("delta").save(config.storage_census_region)
+# cen_region_seg.write.mode("overwrite").format("delta").save(config.storage_census_region)
 
 # COMMAND ----------
 
@@ -191,4 +191,4 @@ cen_division_seg = pref_store_and_dna.select("ehhn", "CEN_DIV").na.drop()
 
 # COMMAND ----------
 
-cen_division_seg.write.mode("overwrite").format("delta").save(config.storage_census_division)
+# cen_division_seg.write.mode("overwrite").format("delta").save(config.storage_census_division)
