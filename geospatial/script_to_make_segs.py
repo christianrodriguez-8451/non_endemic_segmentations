@@ -47,7 +47,6 @@ spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.c
 
 # COMMAND ----------
 
-# Databricks notebook source
 # common python packages
 import pandas as pd
 import numpy as np
@@ -124,7 +123,7 @@ pref_store_and_dna = ((preferred_store
 
 # COMMAND ----------
 
-output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/metro_micro_{today_date}"
+output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/metro_micro_nonmetro_{today_date}"
 
 # COMMAND ----------
 
