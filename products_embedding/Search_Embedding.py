@@ -57,6 +57,8 @@ else:
                                                                                     + dates.today +
                                                                                     '/embedding_sentence_query_lookup')
     for names in embedding_names:
+        names = names.replace(' ', '_')
+        names = names.replace('/', '')
         saved_embedding_sentence_query = \
             embedding_sentence_query_lookup_df.select(embedding_sentence_query_lookup_df.query
                                                       ).where(embedding_sentence_query_lookup_df.name == names)
@@ -67,8 +69,6 @@ else:
         query_vector = utils.model.encode(saved_embedding_sentence_query, normalize_embeddings=True).tolist()
         search_df = utils.create_search_df(utils.create_dot_df(product_vectors_df,
                                                                utils.create_array_query(query_vector)))
-        names = names.replace(' ', '_')
-        names = names.replace('/', '')
         search_df.write.mode("overwrite").format("delta").save(config.diet_query_embeddings_dir + dates.today + '/' +
                                                                names)
 
