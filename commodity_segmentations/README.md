@@ -13,8 +13,8 @@ Creates segmentations by ranking households on how much they spent on the given 
 
 The segmentations that go through this methodology are stored in the percentile_segmentations list object in the config.py.
 
-~~ # Diet Segmentation
-Creates the UPC set for the diet segmentation by pulling UPCs from PIM that contain 'diet' in the product name or product description. Inedible and irrevelant commodities are filtered out from the set. (REJECTED BY LEGAL BECAUSE 'DIET' IS TOO CLOSE TO A MEDICAL CONDITION OR DIAGNOSIS) ~~
+# Diet Segmentation
+~~ Creates the UPC set for the diet segmentation by pulling UPCs from PIM that contain 'diet' in the product name or product description. Inedible and irrevelant commodities are filtered out from the set. (REJECTED BY LEGAL BECAUSE 'DIET' IS TOO CLOSE TO A MEDICAL CONDITION OR DIAGNOSIS) ~~
 
 # Notes
 * commodity_segmentations.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 00:00 (UTC-05:00 - Central Time) every Friday.
