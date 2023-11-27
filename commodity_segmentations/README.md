@@ -11,7 +11,7 @@ A segmentation is also created for all-inclusive fuel purchases (not distinguish
 # Percentile Segmentations
 Creates segmentations by ranking households on how much they spent on the given UPC list. Households are ranked L if the amount of dollars spent on the UPC list is < the 33rd percentile of the amount of dollars spent on the UPC list, they are ranked H if they spent > the 66th percentile, and they are ranked M if they spent <= the 66th percentile and spent >= the 33rd percentile.
 
-The segmentations that go through this methodology are stored in the percentile_segmentations list object in the config.py.
+The segmentations that go through this methodology are stored in the **percentile_segmentations** list object in the config.py.
 
 # Diet Segmentation
 ~~Creates the UPC set for the diet segmentation by pulling UPCs from PIM that contain 'diet' in the product name or product description. Inedible and irrevelant commodities are filtered out from the set. (REJECTED BY LEGAL BECAUSE 'DIET' IS TOO CLOSE TO A MEDICAL CONDITION OR DIAGNOSIS)~~
@@ -20,3 +20,5 @@ The segmentations that go through this methodology are stored in the percentile_
 * commodity_segmentations.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 00:00 (UTC-05:00 - Central Time) every Friday.
 
 * fuel_segmentations.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run at 00:00 (UTC-05:00 - Central Time) every Friday.
+
+* percentile_segmentations.py is scheduled to run under the autorun_commodity_segmentations Workflow job on Databricks. The job is scheduled to run upon the completion of commodity_segmentations.py.
