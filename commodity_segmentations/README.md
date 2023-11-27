@@ -1,5 +1,5 @@
 # Commodity-Segmentations
-Creates lists of UPCs that define commodity-segmentations. The UPC list of a commodity-segmentation are pulled from a combination of commodities and sub-commodities. The commodities and sub-commodities are chosen based on how relevant they are to the given segment. For each combination, the most current UPCs are pulled from ACDS and PID to ensure accuracy. The commodity/sub-commodity combinations and their respective segmentations are stored in config.py.
+Creates lists of UPCs that define commodity-segmentations. The UPC list of a commodity-segmentation are pulled from a combination of commodities and sub-commodities. The commodities and sub-commodities are chosen based on how relevant they are to the given segment. For each combination, the most current UPCs are pulled from ACDS and PID to ensure accuracy. The commodity/sub-commodity combinations and their respective segmentations are stored in the **commodity_segmentations** dictionary object in config.py.
 
 Each of these UPC list are used to define the evaluation universe for each segmentation. In a separate module, this universe of households are given a propensity ranking depending on how much they spent on the given UPC list. This propensity ranking is typically done via fun-lo, percentiles, or a similar method to rank the households. The value of propensity ranking is to improve the accuracy of our segmentations' household compositions.
 
@@ -11,7 +11,7 @@ A segmentation is also created for all-inclusive fuel purchases (not distinguish
 # Percentile Segmentations
 Creates segmentations by ranking households on how much they spent on the given UPC list. Households are ranked L if the amount of dollars spent on the UPC list is < the 33rd percentile of the amount of dollars spent on the UPC list, they are ranked H if they spent > the 66th percentile, and they are ranked M if they spent <= the 66th percentile and spent >= the 33rd percentile.
 
-The segmentations that go through this methodology are stored in the **percentile_segmentations** list object in the config.py.
+The segmentations that go through this methodology are stored in the **percentile_segmentations** list object in config.py.
 
 # Diet Segmentation
 ~~Creates the UPC set for the diet segmentation by pulling UPCs from PIM that contain 'diet' in the product name or product description. Inedible and irrevelant commodities are filtered out from the set. (REJECTED BY LEGAL BECAUSE 'DIET' IS TOO CLOSE TO A MEDICAL CONDITION OR DIAGNOSIS)~~
