@@ -197,7 +197,7 @@ def main(
     frontend_name=frontend_name,
     description=description,
     columnName=columnName,
-    availableValues=default_availableValues,
+    availableValues=availableValues,
     segmentationId=id_str,
   )
   output_fn = 'mongo_' + backend_name + '.json'
@@ -215,6 +215,7 @@ def main(
 
 # COMMAND ----------
 
+#Example Usage
 main(
   backend_name="vegan",
   groupName="Food & Beverage",
