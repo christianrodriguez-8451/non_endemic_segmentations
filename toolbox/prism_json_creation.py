@@ -35,24 +35,24 @@ import uuid
 import shutil
 
 def draw_id(taken_ids = []):
-  '''
+  """
   Randomly draws a UUID in string format.
-  '''
+  """
   #To kick off the while loop
-  id_str = 'token'
-  taken_ids += ['token']
+  id_str = "token"
+  taken_ids += ["token"]
 
   #Drawing a random UUID
   #A UUID is an ID of 32 randomly drawn characters of a-f and 0-9
   #The UUID format is XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
   while id_str in taken_ids:
-      values = ['a', 'b', 'c', 'd', 'e', 'f'] + [str(x) for x in range(0, 9+1)]
-      id_piece1 = ''.join(random.sample(values, 8))
-      id_piece2 = ''.join(random.sample(values, 4))
-      id_piece3 = ''.join(random.sample(values, 4))
-      id_piece4 = ''.join(random.sample(values, 4))
-      id_piece5 = ''.join(random.sample(values, 12))
-      id_str = '-'.join([id_piece1, id_piece2, id_piece3, id_piece4, id_piece5])
+      values = ["a", "b", "c", "d", "e", "f"] + [str(x) for x in range(0, 9+1)]
+      id_piece1 = "".join(random.sample(values, 8))
+      id_piece2 = "".join(random.sample(values, 4))
+      id_piece3 = "".join(random.sample(values, 4))
+      id_piece4 = "".join(random.sample(values, 4))
+      id_piece5 = "".join(random.sample(values, 12))
+      id_str = "-".join([id_piece1, id_piece2, id_piece3, id_piece4, id_piece5])
 
   return(id_str)
 
@@ -65,29 +65,29 @@ def mongodb_template(
   columnName,
   availableValues,
 ):
-  '''
+  """
   Creates an audience template for the mongoDB side.
-  '''
+  """
   backend_name = backend_name.lower().strip()
 
   #Template from engineering
   template = {
-    '_id': {'$uuid': segmentationId.replace('-', '')},
-    'groupName': groupName,
-    'name': backend_name.upper().strip(),
-    'label': frontend_name.strip(),
-    'description': description.strip(),
-    'columnName': columnName,
-    'fileName': f'/data/mart/comms/prd/krogerSegments/{backend_name}/',
-    'fileType': 'PARQUET',
-    'fileMask': f'{backend_name}_',
-    'fileDate': 'LATEST',
-    '_class': 'PredefinedSegmentation',
-    'mutuallyExclusive': False,
-    'availableValues': availableValues,
-    'filterType': 'IN_LIST',
-    'isInternal': False,
-    'ehhnColumnName': 'ehhn'
+    "_id": {"$uuid": segmentationId.replace("-", "")},
+    "groupName": groupName,
+    "name": backend_name.upper().strip(),
+    "label": frontend_name.strip(),
+    "description": description.strip(),
+    "columnName": columnName,
+    "fileName": f"/data/mart/comms/prd/krogerSegments/{backend_name}/",
+    "fileType": "PARQUET",
+    "fileMask": f"{backend_name}_",
+    "fileDate": "LATEST",
+    "_class": "PredefinedSegmentation",
+    "mutuallyExclusive": False,
+    "availableValues": availableValues,
+    "filterType": "IN_LIST",
+    "isInternal": False,
+    "ehhnColumnName": "ehhn"
   }
   return(template)
 
@@ -98,79 +98,79 @@ def onprem_template(
     segmentationId,
     selectedValues,
     ):
-    '''
+    """
     Creates an audience template for the on-premise side.
-    '''
+    """
     template = {
-    'name': frontend_name.strip(),
-    'description': description.strip(),
-    'cells': [
+    "name": frontend_name.strip(),
+    "description": description.strip(),
+    "cells": [
         {
-            'type': 'PRE_DEFINED_SEGMENTATION',
-            'predefinedSegment': {
-                'segmentationId': segmentationId,
-                'selectedValues': selectedValues,
-                'segmentationName': backend_name.upper().strip(),
+            "type": "PRE_DEFINED_SEGMENTATION",
+            "predefinedSegment": {
+                "segmentationId": segmentationId,
+                "selectedValues": selectedValues,
+                "segmentationName": backend_name.upper().strip(),
             },
-            'order': 0
+            "order": 0
         }
     ],
-    'combineOperator': 'AND',
-    'krogerSegment': True,
-    'id': draw_id(),
+    "combineOperator": "AND",
+    "krogerSegment": True,
+    "id": draw_id(),
     }
     return(template)
   
 def writeout_json(json_dict, output_dir, output_fn):
-  '''
+  """
   Writes out the inputted dictionary as a json file at
   the inputted output directory and output filename.
-  '''
+  """
 
   #Convert the dictionary to an RDD so that it can be written as a text file
   json_string = json.dumps(json_dict)
   json_rdd = spark.sparkContext.parallelize([json_string])
   json_rdd = json_rdd.coalesce(1)
-  json_rdd.saveAsTextFile(output_dir + '_temporary')
+  json_rdd.saveAsTextFile(output_dir + "_temporary")
 
   #Extract the consolidated partition and delete the temp folder
-  target_fp = dbutils.fs.ls(output_dir + '_temporary')[1][0]
+  target_fp = dbutils.fs.ls(output_dir + "_temporary")[1][0]
   dbutils.fs.mv(target_fp, output_dir + output_fn)
-  dbutils.fs.rm(output_dir + '_temporary', True)
+  dbutils.fs.rm(output_dir + "_temporary", True)
 
 class DefaultParameters:
   def __init__(self):
-    self.frontend_name = 'MARKETING - INSERT FINAL NAME HERE'
-    self.description = 'MARKETING - INSERT FINAL DESCRIPTION HERE'
-    self.columnName = 'segment'
+    self.frontend_name = "MARKETING - INSERT FINAL NAME HERE"
+    self.description = "MARKETING - INSERT FINAL DESCRIPTION HERE"
+    self.columnName = "segment"
     self.availableValues = [
       {
-        'label': 'High',
-        'value': 'H'
+        "label": "High",
+        "value": "H"
       },
       {
-        'label': 'Medium',
-        'value': 'M'
+        "label": "Medium",
+        "value": "M"
       },
       {
-        'label': 'Low',
-        'value': 'L'
+        "label": "Low",
+        "value": "L"
       },
       {
-        'label': 'New',
-        'value': 'new'
+        "label": "New",
+        "value": "new"
       },
       {
-        'label': 'Lapsed',
-        'value': 'lapsed'
+        "label": "Lapsed",
+        "value": "lapsed"
       },
       {
-        'label': 'Inconsistent',
-        'value': 'inconsistent'
+        "label": "Inconsistent",
+        "value": "inconsistent"
       }
     ]
-    self.selectedValues = ['H']
-    self.output_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/'
+    self.selectedValues = ["H"]
+    self.output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/"
 
 def main(
   backend_name,
@@ -182,12 +182,12 @@ def main(
   selectedValues=DefaultParameters().selectedValues,
   output_dir=DefaultParameters().output_dir,
   ):
-  '''
+  """
   Creates and writes out the templates for MongoDB and
   On-Premise in a single pass. It is important to do this
   in a single pass because there is a segmentationID that
   links both templates.
-  '''
+  """
 
   id_str = draw_id()
 
@@ -200,7 +200,7 @@ def main(
     availableValues=availableValues,
     segmentationId=id_str,
   )
-  output_fn = 'mongo_' + backend_name + '.json'
+  output_fn = "mongo_" + backend_name + ".json"
   writeout_json(json_dict=mongo_json, output_dir=output_dir, output_fn=output_fn)
 
   onprem_json = onprem_template(
@@ -210,7 +210,7 @@ def main(
     selectedValues=selectedValues,
     segmentationId=id_str,
   )
-  output_fn = backend_name + '.json'
+  output_fn = backend_name + ".json"
   writeout_json(json_dict=onprem_json, output_dir=output_dir, output_fn=output_fn)
 
 # COMMAND ----------
@@ -222,3 +222,7 @@ main(
   selectedValues=["H"],
   #output_dir="abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress/",
 )
+
+# COMMAND ----------
+
+
