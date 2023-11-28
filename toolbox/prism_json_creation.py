@@ -8,9 +8,9 @@ segmentationId, and selectedValues.
 To do:
   1) Re-factor the functions so that the mongoDB and on-premise json files
   are created in a single pass. Do this by making segmentationId an argument
-  for mongodb_template.
+  for mongodb_template. (DONE)
 
-  2) Write out the json files using PySpark (Steven Martz's code).
+  2) Write out the json files using PySpark (Steven Martz's code). (DONE)
 
   4) Write out the json files to the egress directory and confirm they are
   moved.
@@ -32,189 +32,192 @@ import random
 import string
 import json
 import uuid
+import shutil
 
 def draw_id(taken_ids = []):
-  """
+  '''
   Randomly draws a UUID in string format.
-  """
-  id_str = "token"
-  taken_ids += ["token"]
+  '''
+  #To kick off the while loop
+  id_str = 'token'
+  taken_ids += ['token']
 
+  #Drawing a random UUID
+  #A UUID is an ID of 32 randomly drawn characters of a-f and 0-9
+  #The UUID format is XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
   while id_str in taken_ids:
-      values = ["a", "b", "c", "d", "e", "f"] + [str(x) for x in range(0, 9+1)]
-      id_piece1 = "".join(random.sample(values, 8))
-      id_piece2 = "".join(random.sample(values, 4))
-      id_piece3 = "".join(random.sample(values, 4))
-      id_piece4 = "".join(random.sample(values, 4))
-      id_piece5 = "".join(random.sample(values, 12))
-      id_str = "-".join([id_piece1, id_piece2, id_piece3, id_piece4, id_piece5])
+      values = ['a', 'b', 'c', 'd', 'e', 'f'] + [str(x) for x in range(0, 9+1)]
+      id_piece1 = ''.join(random.sample(values, 8))
+      id_piece2 = ''.join(random.sample(values, 4))
+      id_piece3 = ''.join(random.sample(values, 4))
+      id_piece4 = ''.join(random.sample(values, 4))
+      id_piece5 = ''.join(random.sample(values, 12))
+      id_str = '-'.join([id_piece1, id_piece2, id_piece3, id_piece4, id_piece5])
 
   return(id_str)
-
 
 def mongodb_template(
   backend_name,
   frontend_name,
   description,
-  groupName="Food & Beverage",
-  ):
-  """
+  groupName,
+  segmentationId,
+  columnName,
+  availableValues,
+):
+  '''
   Creates an audience template for the mongoDB side.
-  """
+  '''
   backend_name = backend_name.lower().strip()
-  id_str = draw_id()
-  #my_uuid = uuid.UUID(id_str)
-  #uuid_buffer = my_uuid.bytes
-  #uuid_str = str(uuid_buffer).replace('-', '')
 
   #Template from engineering
   template = {
-    "_id": {"$uuid": id_str.replace("-", "")},
-    "groupName": groupName,
-    "name": backend_name.upper().strip(),
-    "label": frontend_name.strip(),
-    "description": description.strip(),
-    "columnName": "segment",
-    "fileName": f"/data/mart/comms/prd/krogerSegments/{backend_name}/",
-    "fileType": "PARQUET",
-    "fileMask": f"{backend_name}_",
-    "fileDate": "LATEST",
-    "_class": "PredefinedSegmentation",
-    "mutuallyExclusive": False,
-    "availableValues": [
-      {
-        "label": "High",
-        "value": "H"
-      },
-      {
-        "label": "Medium",
-        "value": "M"
-      },
-      {
-        "label": "Low",
-        "value": "L"
-      },
-      {
-        "label": "New",
-        "value": "new"
-      },
-      {
-        "label": "Lapsed",
-        "value": "lapsed"
-      },
-      {
-        "label": "Inconsistent",
-        "value": "inconsistent"
-      }
-    ],
-    "filterType": "IN_LIST",
-    "isInternal": False,
-    "ehhnColumnName": "ehhn"
+    '_id': {'$uuid': segmentationId.replace('-', '')},
+    'groupName': groupName,
+    'name': backend_name.upper().strip(),
+    'label': frontend_name.strip(),
+    'description': description.strip(),
+    'columnName': columnName,
+    'fileName': f'/data/mart/comms/prd/krogerSegments/{backend_name}/',
+    'fileType': 'PARQUET',
+    'fileMask': f'{backend_name}_',
+    'fileDate': 'LATEST',
+    '_class': 'PredefinedSegmentation',
+    'mutuallyExclusive': False,
+    'availableValues': availableValues,
+    'filterType': 'IN_LIST',
+    'isInternal': False,
+    'ehhnColumnName': 'ehhn'
   }
   return(template)
 
 def onprem_template(
     backend_name,
-    frontend_name="MARKETING - INSERT FINAL NAME HERE",
-    description="MARKETING - INSERT FINAL DESCRIPTION HERE",
-    segmentationId = "COPY & PASTE SEGMENTATION ID HERE",
-    selectedValues=["H"],
+    frontend_name,
+    description,
+    segmentationId,
+    selectedValues,
     ):
-    """
+    '''
     Creates an audience template for the on-premise side.
-    """
+    '''
     template = {
-    "name": frontend_name,
-    "description": description,
-    "cells": [
+    'name': frontend_name.strip(),
+    'description': description.strip(),
+    'cells': [
         {
-            "type": "PRE_DEFINED_SEGMENTATION",
-            "predefinedSegment": {
-                "segmentationId": segmentationId,
-                "selectedValues": selectedValues,
-                "segmentationName": backend_name.upper().strip(),
+            'type': 'PRE_DEFINED_SEGMENTATION',
+            'predefinedSegment': {
+                'segmentationId': segmentationId,
+                'selectedValues': selectedValues,
+                'segmentationName': backend_name.upper().strip(),
             },
-            "order": 0
+            'order': 0
         }
     ],
-    "combineOperator": "AND",
-    "krogerSegment": True,
-    "id": draw_id(),
+    'combineOperator': 'AND',
+    'krogerSegment': True,
+    'id': draw_id(),
     }
     return(template)
+  
+def writeout_json(json_dict, output_dir, output_fn):
+  '''
+  Writes out the inputted dictionary as a json file at
+  the inputted output directory and output filename.
+  '''
 
+  #Convert the dictionary to an RDD so that it can be written as a text file
+  json_string = json.dumps(json_dict)
+  json_rdd = spark.sparkContext.parallelize([json_string])
+  json_rdd = json_rdd.coalesce(1)
+  json_rdd.saveAsTextFile(output_dir + '_temporary')
 
-#groupName
-#backend_name
-#frontend_name (not needed)
-#description (not needed)
-#selectedValues
+  #Extract the consolidated partition and delete the temp folder
+  target_fp = dbutils.fs.ls(output_dir + '_temporary')[1][0]
+  dbutils.fs.mv(target_fp, output_dir + output_fn)
+  dbutils.fs.rm(output_dir + '_temporary', True)
+
+class DefaultParameters:
+  def __init__(self):
+    self.frontend_name = 'MARKETING - INSERT FINAL NAME HERE'
+    self.description = 'MARKETING - INSERT FINAL DESCRIPTION HERE'
+    self.columnName = 'segment'
+    self.availableValues = [
+      {
+        'label': 'High',
+        'value': 'H'
+      },
+      {
+        'label': 'Medium',
+        'value': 'M'
+      },
+      {
+        'label': 'Low',
+        'value': 'L'
+      },
+      {
+        'label': 'New',
+        'value': 'new'
+      },
+      {
+        'label': 'Lapsed',
+        'value': 'lapsed'
+      },
+      {
+        'label': 'Inconsistent',
+        'value': 'inconsistent'
+      }
+    ]
+    self.selectedValues = ['H']
+    self.output_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/'
+
+def main(
+  backend_name,
+  groupName,
+  frontend_name = DefaultParameters().frontend_name,
+  description = DefaultParameters().description,
+  columnName=DefaultParameters().columnName,
+  availableValues=DefaultParameters().availableValues,
+  selectedValues=DefaultParameters().selectedValues,
+  output_dir=DefaultParameters().output_dir,
+  ):
+  '''
+  Creates and writes out the templates for MongoDB and
+  On-Premise in a single pass. It is important to do this
+  in a single pass because there is a segmentationID that
+  links both templates.
+  '''
+
+  id_str = draw_id()
+
+  mongo_json = mongodb_template(
+    backend_name=backend_name,
+    groupName=groupName,
+    frontend_name=frontend_name,
+    description=description,
+    columnName=columnName,
+    availableValues=default_availableValues,
+    segmentationId=id_str,
+  )
+  output_fn = 'mongo_' + backend_name + '.json'
+  writeout_json(json_dict=mongo_json, output_dir=output_dir, output_fn=output_fn)
+
+  onprem_json = onprem_template(
+    backend_name=backend_name,
+    frontend_name=frontend_name,
+    description=description,
+    selectedValues=selectedValues,
+    segmentationId=id_str,
+  )
+  output_fn = backend_name + '.json'
+  writeout_json(json_dict=onprem_json, output_dir=output_dir, output_fn=output_fn)
 
 # COMMAND ----------
 
-#Example Usage
-groupName = "Food & Beverage"
-backend_name = "breakfast_buyers"
-frontend_name = "Breakfast Product Buyers"
-description = "Buyers with a high propensity for purchasing breakfast related products from multiple categories including Ref breakfast, breakfast sausage, frozen breakfast, breakfast foods, cold cereals, NF cereals and oatmeal."
-template = mongodb_template(backend_name, frontend_name, description, groupName)
-
-print(template)
-
-# COMMAND ----------
-
-#Segments used for batch 1 and batch 2 deployment
-segments =[
-    ["Food & Beverage", "beveragist", "Beverage Product Buyers", "Buyers with a high propensity for purchasing drinks and beverages specifically, single serve, soft drink and specialty soft drink buyers.", ["H", "M"]],
-    ["Food & Beverage", "breakfast_buyers", "Breakfast Product Buyers", "Buyers with a high propensity for purchasing breakfast related products from multiple categories including Ref breakfast, breakfast sausage, frozen breakfast, breakfast foods, cold cereals, NF cereals and oatmeal.", ["H", "M"]],
-    ["Food & Beverage", "hispanic_cuisine", "Hispanic Cuisine Product Buyers", "Buyers with a high propensity for purchasing foods in the authentic Central American foods category including frozen Hispanic influenced food, Mexican tortilla, NF Mexican inspired foods, refrigerated Hispanic inspired grocery, traditional Mexican influenced foods.", ["H", "M"]],
-    ["Food & Beverage", "low_fodmap", "Fermentable-Free FODMAP Friendly Product Buyers", "Buyers that prefer to purchase products that are high in these fermentable carbohydrates. Common high FODMAP foods include certain fruits (e.g., apples, pears), certain vegetables (e.g., onions, garlic, cauliflower), dairy products containing lactose, wheat-based products, and certain legumes and sweeteners.", ["H"]],
-    ["Food & Beverage", "low_protein", "Low Protein Buyers", "Buyers that prefer to purchase products that include foods that are lower in protein content, such as Grains(Rice, pasta, bread, and cereals), Fruits(Apples, bananas, berries, etc.), Vegetables( Broccoli, carrots, spinach, etc.), Fats( Oils, avocados, and olives), Low-protein bread and pasta alternatives (made from non-wheat flours like corn or rice).", ["H", "M"]],
-    ["Food & Beverage", "low_salt", "Low Salt Buyers", "Buyers that prefer to avoid purchasing products that are processed and packaged foods(canned soups, sauces, salad dressings, and processed meats like bacon, deli meats), Fast food and restaurant meals, Snack foods( Chips, pretzels, and other salty snacks), Pickled and cured foods(pickles, olives, and cured meats), Condiments( Sauces like soy sauce, ketchup, and some mustard).", ["H", "M"]],
-    ["Food & Beverage", "macrobiotic", "Macro Product Buyers", "Buyers that prefer to purchase products that are whole, natural, local, and seasonal foods and are prepared simply like steaming, boiling, and stir-frying. Raw foods are generally minimized. Preference to avoid processed and refined foods, as well as artificial additives and preservatives.", ["H", "M"]],
-    ["Food & Beverage", "mediterranean_diet", "Mediterranean Cuisine Product Buyers", "Buyers with a high propensity for purchasing products in the authentic Mediterranean foods category include buying an Abundance of fruits and vegetables, Whole grains(wheat, barley, oats, and brown rice), Healthy fats(Olive oil, Nuts, seeds, and avocados), Lean proteins(Fish and poultry, beans, lentils, chickpeas). Limited Dairy and cheese, sweets and red meat.", ["H"]],
-    ["Food & Beverage", "non_veg", "Non-Vegetarian Buyers", "Buyers that prefer to purchase products including: Meat(beef, pork, lamb, chicken, and venison), Poultry(chicken, turkey, duck, and other fowl), Fish and Seafood(salmon, tuna, trout, and seafood like shrimp, prawns, crabs, and mollusks), Eggs, Dairy Products(milk, cheese, yogurt, and butter)", ["H", "M"]],
-    ["Food & Beverage", "organic", "Organic Product Buyers", "Buyers that prefer to purchase products with 'organic' commodities labled. Includes milk, certain proteins, organic fruit and vegetables.", ["H", "M"]],
-    ["Food & Beverage", "salty_snackers", "Snack Product Buyers", "Buyers that prefer to purchase products in the snacking category.", ["H", "M"]],
-    ["Household", "gasoline_premium_unleaded", "Premium Unleaded Fuel Buyers", "Shoppers than have purchased Premium Unleaded Fuel in the last year", ["H", "M"]],
-    ["Household", "gasoline_unleaded_plus", "Premium Unleaded Plus Fuel Buyers", "Shoppers than have purchased Unleaded Plus Fuel in the last year", ["H", "M"]],
-    ["Household", "gasoline_reg_unleaded", "Regular Unleaded Fuel Buyers", "Shoppers than have purchased Regular Unleaded Fuel in the last year", ["H"]],
-]
-
-# COMMAND ----------
-
-#Creates the templates for MongoDB
-for s in segments:
-
-    groupName = s[0]
-    backend_name = s[1]
-    frontend_name = s[2]
-    description = s[3]
-    template = mongodb_template(backend_name, frontend_name, description, groupName)
-
-    fn = "mongodb_" + backend_name + ".json"
-    print(template)
-    #with open(fn, "w+") as outfile:
-        #json.dump(template, outfile, indent=1)
-
-
-# COMMAND ----------
-
-for s in segments:
-
-    backend_name = s[1]
-    frontend_name = s[2]
-    description = s[3]
-    selectedValues = s[4]
-    template = onprem_template(
-        backend_name=backend_name,
-        frontend_name=frontend_name,
-        description=description,
-        selectedValues=selectedValues,
-    )
-
-    fn = backend_name + ".json"
-    print(template)
-    #with open(fn, "w+") as outfile:
-    #    json.dump(template, outfile, indent=1)
-
+main(
+  backend_name="vegan",
+  groupName="Food & Beverage",
+  selectedValues=["H"],
+  #output_dir="abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress/",
+)
