@@ -214,8 +214,8 @@ commodity_segmentations = {
   },
   'fruit_and_natural_snackers': {
     'frontend_name': '',
-    'commodities': ['FRUIT SNACKS', 'NF FRUIT SNACKS', 'NF PACKAGED NATURAL SNACK'],
-    'sub_commodities': [],
+    'commodities': ['FRUIT SNACKS', 'NF FRUIT SNACKS', 'NF PACKAGED NATURAL SNACK', 'DRIED FRUIT'],
+    'sub_commodities': ['DRIED FRUIT'],
     'weeks': 52,
     'live': False,
   },
@@ -386,4 +386,7 @@ commodity_segmentations = {
 percentile_segmentations = [
   "fitness_enthusiast", "beautists", "beverage_enchancers", "back-to-school",
   "summer_bbq", "convenient_breakfast", "energy_beveragist", "indoor_décor_and_gardening",
+  'houses_with_children', 'fruit_and_natural_snackers', 'isotonic_beveragist', 'meat_snackers',
+  'natural_beveragist', 'outdoor_décor_and_gardening', 'pizza_meal_households', 'reader',
+  'asian_cuisine', 'artsy_folk', 'camper',
 ]
