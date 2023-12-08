@@ -144,4 +144,13 @@ time_master_2.write.mode("overwrite").parquet('abfss://media@sa8451dbxadhocprd.d
 
 # COMMAND ----------
 
+metro = spark.read.format("delta").load(f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/metro_micro_nonmetro/modality=metro_micro_nonmetro")
+
+# COMMAND ----------
+
+help = spark.read.format("delta").load(f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality=free_from_gluten")
+help.display()
+
+# COMMAND ----------
+
 

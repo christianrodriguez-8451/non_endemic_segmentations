@@ -123,7 +123,7 @@ pref_store_and_dna = ((preferred_store
 
 # COMMAND ----------
 
-output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/modality=metro_micro_nonmetro/DATE={today_date}"
+output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/modality=metro_micro_nonmetro/date={today_date}"
 
 # COMMAND ----------
 
