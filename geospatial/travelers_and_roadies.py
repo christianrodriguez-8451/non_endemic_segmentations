@@ -60,9 +60,10 @@ import pandas as pd
 # COMMAND ----------
 
 #Pull one year of transaction data
-end_date = date.today().strftime("%Y-%m-%d")
-end_date   = (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=7)).strftime('%Y-%m-%d')
-start_date = (datetime.strptime(end_date, '%Y-%m-%d') - timedelta(days=365)).strftime('%Y-%m-%d')
+#today = "20231117"
+today = date.today().strftime('%Y%m%d')
+end_date   = (datetime.strptime(today, '%Y%m%d') - timedelta(days=7)).strftime('%Y%m%d')
+start_date = (datetime.strptime(today, '%Y%m%d') - timedelta(days=365)).strftime('%Y%m%d')
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(
   start_date = start_date,
@@ -279,9 +280,6 @@ super_roadies.cache()
 print(f"Count of households found purchasing fuel on a significant trip AND in top 90th percentile: {super_roadies.count()}")
 
 # COMMAND ----------
-
-#today = "20231117"
-today = today.strftime('%Y%m%d')
 
 #Create and out the segmentation files for travelers and roadies
 #Travelers - H for households who went on atleast 2 unique significant trips,
