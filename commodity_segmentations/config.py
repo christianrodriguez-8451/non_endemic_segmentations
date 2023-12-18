@@ -389,4 +389,5 @@ percentile_segmentations = [
   'houses_with_children', 'fruit_and_natural_snackers', 'isotonic_beveragist', 'meat_snackers',
   'natural_beveragist', 'outdoor_décor_and_gardening', 'pizza_meal_households', 'reader',
   'asian_cuisine', 'artsy_folk', 'camper',
+  'halloweeners', 'christmas', 'easter',
 ]
