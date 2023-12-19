@@ -379,6 +379,13 @@ commodity_segmentations = {
     ],
     'weeks': 52,
     'live': False,
+  },
+  'casual_auto_fixers': {
+    'frontend_name': '',
+    'commodities': ['AUTO ACCESSORIES', 'AUTO CHEMICALS'],
+    'sub_commodities': ['AUTO BODY PAINT/ADHESIVES', 'BATTERIES', 'ELECTRICAL ITEMS', 'GAS CANS AND FUNNELS', 'OIL FILTERS AND ACCESSORIES', 'ANTIFREEZE', 'APPEARANCE CHEMICALS', 'CARB/BRAKE FLUIDS/LUBS', 'FUNCTIONAL FLUIDS', 'LUBRICANTS/CLEANERS', 'RADIATOR ADDITIVES', 'WINDSHIELD'],
+    'weeks': 52,
+    'live': False,
   }
 }
 
@@ -389,5 +396,5 @@ percentile_segmentations = [
   'houses_with_children', 'fruit_and_natural_snackers', 'isotonic_beveragist', 'meat_snackers',
   'natural_beveragist', 'outdoor_décor_and_gardening', 'pizza_meal_households', 'reader',
   'asian_cuisine', 'artsy_folk', 'camper',
-  'halloweeners', 'christmas', 'easter',
+  'halloweeners', 'christmas', 'easter', 'casual_auto_fixers',
 ]
