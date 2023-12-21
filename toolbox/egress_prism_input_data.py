@@ -7,11 +7,6 @@ out to audience factory's egress directory.
 To Do:
 
   1) Have this auto-execute for every deployed segmentation.
-
-  2) Build API on top of this that asks the user the backend name,
-  column for ehhn, column for columnName, and even smart filepathing.
-  Once given the parameters, it auto loads to the deployed segmentations.
-  How to keep track of the deployed? Python module? Class? JSON?
 """
 
 # COMMAND ----------
@@ -34,94 +29,83 @@ spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.c
 
 # COMMAND ----------
 
-import pandas as pd
+import toolbox.config as con
 import pyspark.sql.functions as f
-import pyspark.sql.types as t
-from pyspark.sql.window import Window
+import datetime as dt
 
-def get_latest_modified_directory(pDirectory):
-    """
-    get_latest_modified_file_from_directory:
-        For a given path to a directory in the data lake, return the directory that was last modified. 
-        Input path format expectation: 'abfss://x@sa8451x.dfs.core.windows.net/
-    """
-    #Set to get a list of all folders in this directory and the last modified date time of each
-    vDirectoryContentsList = list(dbutils.fs.ls(pDirectory))
+#Get all productionized segmentations
+segs = con.segmentations.all_segmentations
+segs.sort()
+problem_segs = []
+for seg in segs:
+  #Get the filepath of the segmentation's latest file
+  #We assume files are sorted (hence we use the last one) and they have a YYYYMMDD timestamp
+  segment = con.segmentation(seg)
+  fn = segment.files[-1]
+  fp = segment.directory + fn
+  print("Read in {} to egress.".format(fp))
 
-    #Convert the list returned from get_dir_content into a dataframe so we can manipulate the data easily. Provide it with column headings. 
-    #You can alternatively sort the list by LastModifiedDateTime and get the top record as well. 
-    df = spark.createDataFrame(vDirectoryContentsList,['FullFilePath', 'LastModifiedDateTime'])
+  #Keep only ehhn and segment
+  df = spark.read.format("delta").load(fp)
+  df = df.select("ehhn", "segment")
 
-    #Get the latest modified date time scalar value
-    maxLatestModifiedDateTime = df.agg({"LastModifiedDateTime": "max"}).collect()[0][0]
-
-    #Filter the data frame to the record with the latest modified date time value retrieved
-    df_filtered = df.filter(df.LastModifiedDateTime == maxLatestModifiedDateTime)
+  #Get count of all propensities in the file
+  print("{} grouped-by household count:\n".format(seg))
+  grouped_df = df.groupBy("segment").count()
+  print(grouped_df.show(50, truncate=False))
+  
+  #Get count of propensities used in production
+  filtered_df = df.filter(f.col("segment").isin(segment.propensities))
+  filtered_count = filtered_df.count()
+  print("{} household count: {}".format(seg, filtered_count))
+  #If that count is too low, void egressing the file and throw an error at the end
+  threshold = 1750000
+  if filtered_count < threshold:
+    problem_segs += [seg]
+    print("WARNING - Added {} to problematic segmentations.\n\n".format(seg))
+    continue
     
-    #return the file name that was last modifed in the given directory
-    return df_filtered.first()['FullFilePath']
+  #Write out to the egress directory and write out in format that engineering expects
+  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+  today = dt.datetime.today().strftime('%Y%m%d')
+  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
+  df.write.mode("overwrite").format("parquet").save(dest_fp)
+  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
 
-seg_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality=lactose_free/"
-fp = get_latest_modified_directory(seg_dir)
-#stratum = spark.read.format("delta").load(fp)
-
-#print(stratum.show(5))
-#print(stratum.select("segment").distinct().collect())
+#Throw an error for all the segmentations that did not meet the threshold
+if len(problem_segs) > 0:
+  problem_segs.sort()
+  message = "There are {} problematic segmentations! Their household counts are far too low below the {} threshold. The problematic segmentations are: {}.".format(len(problem_segs), threshold, ", ".join(problem_segs))
+  raise ValueError(message)
 
 # COMMAND ----------
 
-#Took out heart_friendly since not found (10.12.2023)
-from commodity_segmentations import percentile_segmentations
-segmentations = {
-  "funlo": [
-    "free_from_gluten", "grain_free", "healthy_eating", "heart_friendly",
-    "ketogenic", "kidney-friendly", "lactose_free", "low_bacteria", "paleo",
-    "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine",
-    "low_fodmap", "mediterranean_diet", "organic", "salty_snackers",
-    "non_veg", "low_salt", "low_protein", "heart_friendly", "macrobiotic",
-    ],
-  "percentile": percentile_segmentations,
-  "fuel": ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"],
-}
-filepaths = {
-  "funlo": "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality={}/",
-  "percentile": "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/percentile_segmentations/{}/",
-  "fuel": "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/fuel_segmentations/{}/",
-}
+#Code used to investigate the data issues
+bad_segs = [
+  'free_from_gluten', 'grain_free', 'healthy_eating',
+  'ketogenic', 'kidney-friendly', 'lactose_free',
+  'low_bacteria', 'low_fodmap', 'mediterranean_diet',
+  'paleo', 'vegan', 'vegetarian',
+]
 
-segs = segmentations["funlo"] + segmentations["percentile"] + segmentations["fuel"]
-for seg in segs:
-  #try:
-    #Read in latest directory of segment
-    if seg in segmentations["funlo"]:
-      fp = filepaths["funlo"].format(seg)
-      fp = get_latest_modified_directory(fp)
+for b in bad_segs:
+  count = 0
+  segment = con.segmentation(b)
+  files = segment.files
+  files.reverse()
 
-    elif seg in segmentations["fuel"]:
-      fp = filepaths["fuel"].format(seg)
-      fp = get_latest_modified_directory(fp)
+  for i in files:
+    fp = segment.directory + i
+    df = spark.read.format("delta").load(fp)
+    df = df.select("ehhn", "segment")
 
-    elif seg in segmentations["percentile"]:
-      fp = filepaths["percentile"].format(seg)
-      fp = get_latest_modified_directory(fp)
+    filtered_df = df.filter(f.col("segment").isin(segment.propensities))
+    filtered_count = filtered_df.count()
+    if filtered_count >= 1750000:
+      print("{}-{} has enough rows!".format(b, i))
+      break
 
-    
-    print("Latest directory is {}!".format(fp))
+    else:
+      print("{}-{} has {} records...".format(b, i, filtered_count))
 
-    #Keep only ehhn and segment
-    stratum = spark.read.format("delta").load(fp)
-    stratum = stratum.select("ehhn", "segment")
-
-    print("segmentation: {}".format(seg))
-    print(stratum.show(10))
-    print(stratum.count())
-
-    #Write out to the egress directory and write out in format that engineering expects
-    egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
-    today = "20231120"
-    dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
-    stratum.write.mode("overwrite").format("parquet").save(dest_fp)
-    print("SUCCESS: Wrote out to {} successfully!".format(dest_fp))
-
-  #except:
-  #  print("ALERT: Could not find input data for {}!".format(seg))
+  print("{} has no files with enough rows!".format(b))
