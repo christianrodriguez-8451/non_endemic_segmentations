@@ -10,6 +10,7 @@ class segmentations:
     "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine",
     "low_fodmap", "mediterranean_diet", "organic", "salty_snackers",
     "non_veg", "low_salt", "low_protein", "heart_friendly", "macrobiotic",
+    "high_protein",
   ]
   percentile_segmentations = percentile_segmentations
   fuel_segmentations = ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"]
@@ -100,7 +101,7 @@ def get_propensity_composition(segmentation_name):
     "macrobiotic": ["H", "M"],
     "salty_snackers": ["H", "M"],
     "organic": ["H", "M"],
-    "mediterranean diet": ["H"],
+    "mediterranean_diet": ["H"],
     "low_fodmap": ["H"],
     "beveragist": ["H", "M"],
     "hispanic_cuisine": ["H", "M"],
@@ -109,10 +110,32 @@ def get_propensity_composition(segmentation_name):
     "gasoline_unleaded_plus": ["H", "M"],
     "gasoline_reg_unleaded": ["H"],
     "gasoline": ["H"],
+    "beautists": ["H"],
+    "beverage_enchancers": ["H"],
+    "summer_bbq": ["H"],
+    "convenient_breakfast": ["H"],
+    "energy_beveragist": ["H"],
+    "houses_with_children": ["H", "M", "L"],
+    "high_protein": ["H"],
+    "artsy_folk": ["H", "M", "L"],
+    "asian_cuisine": ["H"],
+    "camper": ["H", "M", "L"],
+    "christmas": ["H", "M", "L"],
+    "easter": ["H", "M", "L"],
+    "halloweeners": ["H", "M", "L"],
     #
     "roadies": ["H", "M"],
     "travelers": ["H", "M"],
     "back-to-school": ["H", "M"],
+    "fitness_enthusiast": ["H"],
+    'fruit_and_natural_snackers': ["H"],
+    'indoor_décor_and_gardening': ["H", "M"],
+    'isotonic_beveragist': ["H"],
+    'meat_snackers': ["H"],
+    'natural_beveragist': ["H", "M"],
+    'outdoor_décor_and_gardening': ["H", "M"],
+    'pizza_meal_households': ["H"],
+    'reader': ["H", "M"],
   }
   return(propensity_dict[segmentation_name])
 
@@ -147,3 +170,4 @@ def get_upc_files(segmentation_name):
   """
   #Need upc_segmentations class
   return(None)
+
