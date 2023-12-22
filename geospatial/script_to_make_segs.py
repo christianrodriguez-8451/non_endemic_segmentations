@@ -130,7 +130,15 @@ output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/modality=metro_mic
 # ehhn and metro
 
 metro_seg_0 = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
-metro_seg_1 = metro_seg_0.withColumnRenamed("CBSA_TYPE", "segment")
+metro_seg_1 = (metro_seg_0
+               .withColumnRenamed("CBSA_TYPE", "segment")
+               .withColumn("date", f.lit(today_date))
+)
+metro_seg_1.display()
+
+# COMMAND ----------
+
+metro = spark.read.format("delta").load(f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factorymedia/audience_factory/geospatial/metro_micro_nonmetro/modality=metro_micro_nonmetro/date=2023121")
 
 # COMMAND ----------
 
