@@ -243,7 +243,7 @@ config.get_directory("casual_auto_fixers")
 
 # taking a look at percentile segmentation delta structure
 
-reading = spark.read.format("delta").load('abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/percentile_segmentations/casual_auto_fixers/casual_auto_fixers_20231222")
+reading = spark.read.format("delta").load("abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/percentile_segmentations/casual_auto_fixers/casual_auto_fixers_20231222")
 reading.display()
 
 # COMMAND ----------

@@ -119,30 +119,68 @@ pref_store_and_dna = ((preferred_store
 
 # COMMAND ----------
 
-# output_path_metro_micro = f'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/metro_micro_nonmetro/metro_micro_{today_date}'
-
-# COMMAND ----------
-
-output_path_metro_micro = f"{config.metro_micro_nonmetro_dir}/modality=metro_micro_nonmetro/date={today_date}"
-
-# COMMAND ----------
-
 # ehhn and metro
 
 metro_seg_0 = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
 metro_seg_1 = (metro_seg_0
-               .withColumnRenamed("CBSA_TYPE", "segment")
                .withColumn("date", f.lit(today_date))
 )
-metro_seg_1.display()
 
 # COMMAND ----------
 
-metro = spark.read.format("delta").load(f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factorymedia/audience_factory/geospatial/metro_micro_nonmetro/modality=metro_micro_nonmetro/date=2023121")
+# requested by christain on 1/4/24 
+# need to split up the metromicro df into 3 seperate dfs to allow easier access into prism
+# will filter to particular segment
+# will add a column for propensity called "H"
+
+metropolitan = ((metro_seg_1
+                .filter(f.col("CBSA_TYPE") == "Metropolitan Statistical Area")
+                .withColumn("segment", f.lit("H"))
+                )
+                .drop("CBSA_TYPE")
+)
+
+micropolitan = ((metro_seg_1
+                .filter(f.col("CBSA_TYPE") == "Micropolitan Statistical Area")
+                .withColumn("segment", f.lit("H"))
+                )
+                .drop("CBSA_TYPE")
+)
+
+nonmetro = ((metro_seg_1
+                .filter(f.col("CBSA_TYPE") == "NonMetro")
+                .withColumn("segment", f.lit("H"))
+                )
+                .drop("CBSA_TYPE")
+)
 
 # COMMAND ----------
 
-metro_seg_1.write.mode("overwrite").format("delta").save(output_path_metro_micro)
+# QA CEHCK
+
+# count 
+orig_metro_count = metro_seg_1.filter(f.col("CBSA_TYPE") == "Metropolitan Statistical Area").count() 
+orig_micro_count = metro_seg_1.filter(f.col("CBSA_TYPE") == "Micropolitan Statistical Area").count() 
+orig_nonmetro_count = metro_seg_1.filter(f.col("CBSA_TYPE") == "NonMetro").count() 
+
+
+print(f"the difference between the count of the original df metro_seg_1 and metropolitan is {orig_metro_count - metropolitan.count()}")
+print(f"the difference between the count of the original df metro_seg_1 and micropolitan is {orig_micro_count - micropolitan.count()}")
+print(f"the difference between the count of the original df metro_seg_1 and nonmetro is {orig_nonmetro_count - nonmetro.count()}")
+
+
+# COMMAND ----------
+
+# output paths 
+output_path_metropolitan = f"{config.metro_micro_nonmetro_dir}/modality=metropolitan/date={today_date}"
+output_path_micropolitan = f"{config.metro_micro_nonmetro_dir}/modality=micropolitan/date={today_date}"
+output_path_nonmetro = f"{config.metro_micro_nonmetro_dir}/modality=nonmetro/date={today_date}"
+
+# COMMAND ----------
+
+metropolitan.write.mode("overwrite").format("delta").save(output_path_metropolitan)
+micropolitan.write.mode("overwrite").format("delta").save(output_path_micropolitan)
+nonmetro.write.mode("overwrite").format("delta").save(output_path_nonmetro)
 
 # COMMAND ----------
 
