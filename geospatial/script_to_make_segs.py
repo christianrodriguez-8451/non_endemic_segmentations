@@ -128,7 +128,7 @@ metro_seg_1 = (metro_seg_0
 
 # COMMAND ----------
 
-# requested by christain on 1/4/24 
+# requested by christian on 1/4/24 
 # need to split up the metromicro df into 3 seperate dfs to allow easier access into prism
 # will filter to particular segment
 # will add a column for propensity called "H"
