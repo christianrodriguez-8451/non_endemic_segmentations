@@ -123,7 +123,6 @@ def get_propensity_composition(segmentation_name):
     "christmas": ["H", "M", "L"],
     "easter": ["H", "M", "L"],
     "halloweeners": ["H", "M", "L"],
-    #
     "roadies": ["H", "M"],
     "travelers": ["H", "M"],
     "back-to-school": ["H", "M"],
@@ -136,6 +135,7 @@ def get_propensity_composition(segmentation_name):
     'outdoor_décor_and_gardening': ["H", "M"],
     'pizza_meal_households': ["H"],
     'reader': ["H", "M"],
+    'casual_auto_fixers': ["H", "M", "L"],
   }
   return(propensity_dict[segmentation_name])
 
