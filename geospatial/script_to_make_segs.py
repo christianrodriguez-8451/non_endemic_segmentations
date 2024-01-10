@@ -104,8 +104,8 @@ states_info = spark.read.option("header","true").csv("abfss://geospatial@sa8451g
 
 # COMMAND ----------
 
-# join preferred store to store dna 
-# left join 
+# left join preferred store to store dna 
+# also join states info to make one master df
 
 pref_store_and_dna = ((preferred_store
                       .join(SDNA, preferred_store['pref_store_code_1'] == SDNA['STORE_CODE'], how='left')
@@ -119,12 +119,9 @@ pref_store_and_dna = ((preferred_store
 
 # COMMAND ----------
 
-# ehhn and metro
+# selecting ehhn and metro
 
 metro_seg_0 = pref_store_and_dna.select("ehhn", "CBSA_TYPE").na.drop()
-metro_seg_1 = (metro_seg_0
-               .withColumn("date", f.lit(today_date))
-)
 
 # COMMAND ----------
 
@@ -133,21 +130,21 @@ metro_seg_1 = (metro_seg_0
 # will filter to particular segment
 # will add a column for propensity called "H"
 
-metropolitan = ((metro_seg_1
+metropolitan = ((metro_seg_0
                 .filter(f.col("CBSA_TYPE") == "Metropolitan Statistical Area")
                 .withColumn("segment", f.lit("H"))
                 )
                 .drop("CBSA_TYPE")
 )
 
-micropolitan = ((metro_seg_1
+micropolitan = ((metro_seg_0
                 .filter(f.col("CBSA_TYPE") == "Micropolitan Statistical Area")
                 .withColumn("segment", f.lit("H"))
                 )
                 .drop("CBSA_TYPE")
 )
 
-nonmetro = ((metro_seg_1
+nonmetro = ((metro_seg_0
                 .filter(f.col("CBSA_TYPE") == "NonMetro")
                 .withColumn("segment", f.lit("H"))
                 )
@@ -159,14 +156,14 @@ nonmetro = ((metro_seg_1
 # QA CEHCK
 
 # count 
-orig_metro_count = metro_seg_1.filter(f.col("CBSA_TYPE") == "Metropolitan Statistical Area").count() 
-orig_micro_count = metro_seg_1.filter(f.col("CBSA_TYPE") == "Micropolitan Statistical Area").count() 
-orig_nonmetro_count = metro_seg_1.filter(f.col("CBSA_TYPE") == "NonMetro").count() 
+orig_metro_count = metro_seg_0.filter(f.col("CBSA_TYPE") == "Metropolitan Statistical Area").count() 
+orig_micro_count = metro_seg_0.filter(f.col("CBSA_TYPE") == "Micropolitan Statistical Area").count() 
+orig_nonmetro_count = metro_seg_0.filter(f.col("CBSA_TYPE") == "NonMetro").count() 
 
 
-print(f"the difference between the count of the original df metro_seg_1 and metropolitan is {orig_metro_count - metropolitan.count()}")
-print(f"the difference between the count of the original df metro_seg_1 and micropolitan is {orig_micro_count - micropolitan.count()}")
-print(f"the difference between the count of the original df metro_seg_1 and nonmetro is {orig_nonmetro_count - nonmetro.count()}")
+print(f"the difference between the count of the original df metro_seg_0 and metropolitan is {orig_metro_count - metropolitan.count()}")
+print(f"the difference between the count of the original df metro_seg_0 and micropolitan is {orig_micro_count - micropolitan.count()}")
+print(f"the difference between the count of the original df metro_seg_0 and nonmetro is {orig_nonmetro_count - nonmetro.count()}")
 
 
 # COMMAND ----------
