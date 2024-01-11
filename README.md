@@ -21,4 +21,7 @@ It is not necessary to start with a product set. Most of the methods start with 
   <figcaption>Prism page where all productionized segmentations land.</figcaption>
 </figure>
 
-* Links to Confluence pages.
+Links to Confluence pages.
+
+# Collaboration
+If you are interested in contributing to the repo, please reach out to Christian Rodriguez or Steven Martz. They will send you the Github invite so that you have push access to the repo.
