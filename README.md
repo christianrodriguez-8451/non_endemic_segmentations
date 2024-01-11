@@ -11,9 +11,10 @@ The segmentations are created through a diverse set of methods. Most of the meth
 1) Identify a product set. Each household that purchases any of these products are to be considered in the given segmentation.
 2) For every household that has purchased any of the products in the product set, give them a propensity ranking that measures their affinity for the given product set. The intent here is to differentiate between households that rarely bought the given products and those who frequently purchased such products.
 3) Get a household count for each of the propensity rankings. There exist a sizing requirement where each segmentation must have a minimum 2 million households to be included in Prism.
-4) Decide which households are to be included in the given segmentation based on their propensity rankings. The intent is to only keep households with the highest affinity, but this priority is relaxed if we need do not have enough households to reach the 2 million household threshold.
+4) Decide which households are to be included in the given segmentation based on their propensity rankings. The intent is to only keep households with the highest affinity, but this priority is relaxed if there are not enough households to reach the 2 million household minimum.
 
+It is not necessary to start with a product set. Most of the methods start with a product set because transactions data is one 84.51's most valuable assets. Any method can be utilized as long as the output is a household set that can be delivered to On-Prem.
 
-* How this package envisions to make non-endemic segmentations.
+# Notes
 
 * Links to Confluence pages.
