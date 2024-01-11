@@ -16,8 +16,9 @@ The segmentations are created through a diverse set of methods. Most of the meth
 It is not necessary to start with a product set. Most of the methods start with a product set because transactions data is one 84.51's most valuable assets. Any method can be utilized as long as the output is a household set that can be delivered to On-Prem.
 
 # Notes
-
-<img width="1509" alt="Screenshot 2024-01-11 at 3 42 35 PM" src="https://github.com/christianrodriguez-8451/non_endemic_segmentations/assets/129775077/cfca9f9a-dadd-4ebe-8c3d-6d8b3fdfc3d2">
-
+<figure>
+  <img width="1509" alt="Screenshot 2024-01-11 at 3 42 35 PM" src="https://github.com/christianrodriguez-8451/non_endemic_segmentations/assets/129775077/cfca9f9a-dadd-4ebe-8c3d-6d8b3fdfc3d2">
+  <figcaption>Prism page where all productionized segmentations land.</figcaption>
+</figure>
 
 * Links to Confluence pages.
