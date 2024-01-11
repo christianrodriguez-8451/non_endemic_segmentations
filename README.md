@@ -17,4 +17,7 @@ It is not necessary to start with a product set. Most of the methods start with 
 
 # Notes
 
+<img width="1509" alt="Screenshot 2024-01-11 at 3 42 35 PM" src="https://github.com/christianrodriguez-8451/non_endemic_segmentations/assets/129775077/cfca9f9a-dadd-4ebe-8c3d-6d8b3fdfc3d2">
+
+
 * Links to Confluence pages.
