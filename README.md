@@ -5,14 +5,12 @@ Segmentations (aka audiences) are sets of households that can be marketed to via
 * **High Volume Fuel Fillers** - Buyers that purchase high volumes of fuel within the past 52 weeks. Fuel types are not distinguished for this audience.
 * **Road Trippers** - Buyers who are frequently found shopping and/or filling up gas at stores outside of their preferred store and those stores are a significant distance away from their preferred store. In a nutshell, households that go on road trips or travel frequently.
 
-Non-Endemic segmentations are ***.
-
-* What are non-endemic segmentations.
-
-* Who are non-endemic segmentations for and where do they land.
+The segmentations are created through a diverse set of methods. Most of the methods are designed as follows:
+1) Identify a product set. Each household that purchases any of these products are to be considered in the given segmentation.
+2) For every household that has purchased any of the products in the product set, give them a propensity ranking that measures their affinity for the given product set. The intent here is to differentiate between households that rarely bought the given products and those who frequently purchased such products.
+3) Get a household count for each of the propensity rankings. There exist a sizing requirement where each segmentation must have a minimum 2 million households to be included in Prism.
+4) Decide which households are to be included in the given segmentation based on their propensity rankings. The intent is to only keep households with the highest affinity, but this priority is relaxed if we need do not have enough households to reach the 2 million household threshold.
 
 * How this package envisions to make non-endemic segmentations.
-
-* Current process of creating UPCs -> getting household set from fun-lo methodology -> placing these household sets to egress directory -> landing On-Premise.
 
 * Links to Confluence pages.
