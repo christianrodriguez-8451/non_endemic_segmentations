@@ -1,5 +1,5 @@
 # Non-Endemic Segmentations
-Segmentations (aka audiences) are sets of households that can be marketed to via the Prism platform. Non-endemic segmentations are segmentations that are in-demand by Kroger's non-endemic clients. Some examples of non-endemic segmentations are:
+Segmentations (aka audiences) are sets of households that can be marketed to via the Prism platform. Non-endemic segmentations are segmentations that are in-demand by 84.51's non-endemic clients. Some examples of segmentations are:
 * Vegan Product Enthusiasts - Buyers that prefer to purchase vegan brands and products based on purchase history and shopping patterns.
 * Back-to-School Product Shoppers - Buyers who have a high affinity for purchasing academic themed products and products during the Fall and back to school category timeframe.
 * High Volume Fuel Fillers - Buyers that purchase high volumes of fuel within the past 52 weeks. Fuel types are not distinguished for this audience.
