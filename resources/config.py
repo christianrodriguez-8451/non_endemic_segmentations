@@ -3,12 +3,13 @@ from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 dbutils = DBUtils(spark)
+from poirot.azure.databricks import svc_prncpl_magic_setup
 
 # Define service principals
 service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev', key='spTmMediaDev-pw')
 service_application_id = dbutils.secrets.get(scope='kv-8451-tm-media-dev', key='spTmMediaDev-app-id')
 directory_id = "5f9dc6bd-f38a-454a-864c-c803691193c5"
-storage_account = ['sa8451posprd', 'sa8451dbxadhocprd', 'sa8451entlakegrnprd']
+storage_account = ['sa8451dbxadhocprd', 'sa8451entlakegrnprd']
 
 # Set configurations
 for sa in storage_account:
@@ -19,6 +20,9 @@ for sa in storage_account:
     spark.conf.set(f"fs.azure.account.oauth2.client.secret.{sa}.dfs.core.windows.net", service_credential)
     spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{sa}.dfs.core.windows.net",
                    f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
+
+svc_prncpl_magic_setup(scope='kv-8451-tm-media-dev', app_id_secret='spTmMediaDev-app-id',
+                       app_pw_secret='spTmMediaDev-pw')
 
 # Define root directories and sub directories.
 embedded_dimensions_dir = 'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions'
