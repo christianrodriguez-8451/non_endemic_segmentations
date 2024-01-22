@@ -1,9 +1,9 @@
 # Databricks notebook source
 """
-This notebook will update the segmentations for Metro, Micro, NonMetro; State; Media Market; Census Region; and Census Division. 
-
-It joins Preferred Store and Store DNA to create the segments. 
-
+Creates segmentations for Metro, Micro, and NonMetro.
+Relies on Preferred Store and Store DNA to create the segments. Pulls
+every household's preferred store from Preferred Store Database and then
+gets every store's CBSA type (non-metro, micro, metro) from Store DNA.
 """
 
 # COMMAND ----------
@@ -49,11 +49,6 @@ import geospatial.config as config
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC # Preferred Store & Store DNA
-
-# COMMAND ----------
-
 #Read in Store DNA to get every store's cbsa type
 store_dna = spark.read.format("delta").load("abfss://geospatial@sa8451geodev.dfs.core.windows.net/SDNA/GSC_SDNA")
 
@@ -62,10 +57,6 @@ store_dna = spark.read.format("delta").load("abfss://geospatial@sa8451geodev.dfs
 # https://confluence.kroger.com/confluence/display/8451EC/Preferred+Store+Logic
 today_date = datetime.now().strftime("%Y%m%d")
 preferred_store = seg.get_seg_for_date(seg="pref_store", date=today_date)
-
-pref_store_and_dna = preferred_store.join(store_dna,
-                                          preferred_store['pref_store_code_1'] == store_dna['STORE_CODE'],
-                                          how='left')
 
 # COMMAND ----------
 
@@ -90,7 +81,7 @@ nonmetro = nonmetro.drop("CBSA_TYPE")
 
 # COMMAND ----------
 
-#QC Check
+#QC Check by getting household count per cbsa type
 ehhn_cbsa = ehhn_cbsa.groupBy('CBSA_TYPE').agg(f.count('CBSA_TYPE').alias('household_count'))
 ehhn_cbsa.show(10, truncate=False)
 
@@ -104,63 +95,3 @@ nonmetro_fp = f"{config.metro_micro_nonmetro_dir}nonmetro/nonmetro_{today_date}"
 metropolitan.write.mode("overwrite").format("delta").save(metro_fp)
 micropolitan.write.mode("overwrite").format("delta").save(micro_fp)
 nonmetro.write.mode("overwrite").format("delta").save(nonmetro_fp)
-
-# COMMAND ----------
-
-# MAGIC %md 
-# MAGIC ## state
-
-# COMMAND ----------
-
-# read in states info -- this is for census region and division 
-states_info = spark.read.option("header","true").csv("abfss://geospatial@sa8451geodev.dfs.core.windows.net/standard_geography/census_geography/census_state.csv")
-.join(states_info, store_dna['STATE'] == states_info['STUSPS'], how = 'left')
-.join(states_info, store_dna['STATE'] == states_info['STUSPS'], how = 'left')
-#ehhn and state 
-state_seg = preferred_store.select("ehhn", "STATE").na.drop()
-# state_seg.display()
-
-# COMMAND ----------
-
-# state_seg.write.mode("overwrite").format("delta").save(config.storage_state)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## media market
-
-# COMMAND ----------
-
-#ehhn and media market 
-media_market_seg = pref_store_and_dna.select("ehhn", "IRI_MEDIA_MKT_NAME").na.drop()
-# media_market_seg.display()
-
-# COMMAND ----------
-
-# media_market_seg.write.mode("overwrite").format("delta").save(config.storage_media_market)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## census region
-
-# COMMAND ----------
-
-cen_region_seg = pref_store_and_dna.select("ehhn", "CEN_REG").na.drop()
-
-# COMMAND ----------
-
-# cen_region_seg.write.mode("overwrite").format("delta").save(config.storage_census_region)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## census division
-
-# COMMAND ----------
-
-cen_division_seg = pref_store_and_dna.select("ehhn", "CEN_DIV").na.drop()
-
-# COMMAND ----------
-
-# cen_division_seg.write.mode("overwrite").format("delta").save(config.storage_census_division)
