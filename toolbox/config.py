@@ -14,8 +14,9 @@ class segmentations:
   ]
   percentile_segmentations = percentile_segmentations
   fuel_segmentations = ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"]
-  geospatial_segmentations = ["roadies", "travelers"]
+  geospatial_segmentations = ["roadies", "travelers", "metropolitan", "micropolitan"]
   all_segmentations = funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations
+  all_segmentations.sort()
 
 #TODO: Make a class that groups the segmentations by how their UPC lists
 # are generated. This will make it easy to track their UPC lists too.  
@@ -136,6 +137,8 @@ def get_propensity_composition(segmentation_name):
     'pizza_meal_households': ["H"],
     'reader': ["H", "M"],
     'casual_auto_fixers': ["H", "M", "L"],
+    'metropolitan': ['H'],
+    'micropolitan': ['H'],
   }
   return(propensity_dict[segmentation_name])
 
