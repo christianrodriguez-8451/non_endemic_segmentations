@@ -12,14 +12,14 @@ directory_id = "5f9dc6bd-f38a-454a-864c-c803691193c5"
 storage_account = ['sa8451dbxadhocprd', 'sa8451entlakegrnprd']
 
 # Set configurations
-for sa in storage_account:
-    spark.conf.set(f"fs.azure.account.auth.type.{sa}.dfs.core.windows.net", "OAuth")
-    spark.conf.set(f"fs.azure.account.oauth.provider.type.{sa}.dfs.core.windows.net",
-                   "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
-    spark.conf.set(f"fs.azure.account.oauth2.client.id.{sa}.dfs.core.windows.net", service_application_id)
-    spark.conf.set(f"fs.azure.account.oauth2.client.secret.{sa}.dfs.core.windows.net", service_credential)
-    spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{sa}.dfs.core.windows.net",
-                   f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
+#for sa in storage_account:
+#    spark.conf.set(f"fs.azure.account.auth.type.{sa}.dfs.core.windows.net", "OAuth")
+#    spark.conf.set(f"fs.azure.account.oauth.provider.type.{sa}.dfs.core.windows.net",
+#                   "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+#    spark.conf.set(f"fs.azure.account.oauth2.client.id.{sa}.dfs.core.windows.net", service_application_id)
+#    spark.conf.set(f"fs.azure.account.oauth2.client.secret.{sa}.dfs.core.windows.net", service_credential)
+#    spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{sa}.dfs.core.windows.net",
+#                   f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
 
 svc_prncpl_magic_setup(scope='kv-8451-tm-media-dev', app_id_secret='spTmMediaDev-app-id',
                        app_pw_secret='spTmMediaDev-pw')
