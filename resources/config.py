@@ -1,4 +1,3 @@
-%pip install poirot
 from poirot.azure.databricks import svc_prncpl_magic_setup
 
 # spark
