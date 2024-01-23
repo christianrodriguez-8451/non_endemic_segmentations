@@ -1,9 +1,11 @@
+%pip install poirot
+from poirot.azure.databricks import svc_prncpl_magic_setup
+
 # spark
 from pyspark.dbutils import DBUtils
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 dbutils = DBUtils(spark)
-from poirot.azure.databricks import svc_prncpl_magic_setup
 
 # Define service principals
 service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev', key='spTmMediaDev-pw')
