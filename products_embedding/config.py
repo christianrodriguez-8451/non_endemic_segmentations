@@ -1,4 +1,4 @@
-# DATE_RANGE_WEIGHTS = {4: 0.27, 3: 0.26, 2: 0.24, 1: 0.23}
+DATE_RANGE_WEIGHTS = {4: 0.27, 3: 0.26, 2: 0.24, 1: 0.23}
 
 # def dummy_fn(x, y):
 #   return(x + y)
@@ -201,49 +201,49 @@ commodity_segmentations = {
     'weeks': 52,
     'live': False,
   },
-  '': {
+  'glycemic': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
     'weeks': 52,
     'live': False
   },
-  '': {
+  'plant_based': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
     'weeks': 52,
     'live': False,
   },
-  '': {
+  'plant_based_whole_foods': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
     'weeks': 52,
     'live': False,
   },
-  '': {
+  'pescetarian': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
     'weeks': 52,
     'live': False,
   },
-  '': {
+  'raw_food': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
     'weeks': 52,
     'live': False,
   },
-  '': {
+  'without_beef': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
     'weeks': 52,
     'live': False,
   },
-  '': {
+  'without_pork': {
     'frontend_name': '',
     'commodities': [],
     'sub_commodities': [],
@@ -340,10 +340,9 @@ commodity_segmentations = {
 
 # Segmentations that go through fun-lo propensity ranking
 funlo_segmentations = [
-  "free_from_gluten", "grain_free", "healthy_eating",
-  "ketogenic", "kidney-friendly", "lactose_free", "low_bacteria", "paleo",
-  "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine",
-  "low_fodmap", "mediterranean_diet", "organic", "salty_snackers",
-  "non_veg", "low_salt", "low_protein", "heart_friendly", "macrobiotic",
-  "high_protein", "ayervedic", "low_calorie"
+  "free_from_gluten", "grain_free", "healthy_eating", "ketogenic", "kidney-friendly", "lactose_free", "low_bacteria",
+  "paleo", "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine", "low_fodmap",
+  "mediterranean_diet", "organic", "salty_snackers", "non_veg", "low_salt", "low_protein", "heart_friendly",
+  "macrobiotic", "high_protein", "ayervedic", "low_calorie", "engine_2", "glycemic", "plant_based_whole_foods",
+  "pescetarian", "raw_food", "without_beef", "without_pork"
 ]
