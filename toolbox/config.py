@@ -136,7 +136,7 @@ def get_propensity_composition(segmentation_name):
     'outdoor_décor_and_gardening': ["H", "M"],
     'pizza_meal_households': ["H"],
     'reader': ["H", "M"],
-    'casual_auto_fixers': ["H", "M", "L"],
+    'casual_auto_fixers': ["H", "M"],
     'metropolitan': ['H'],
     'micropolitan': ['H'],
   }
