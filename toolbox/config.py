@@ -113,7 +113,7 @@ def get_propensity_composition(segmentation_name):
     "gasoline": ["H"],
     "beautists": ["H"],
     "beverage_enchancers": ["H"],
-    "summer_bbq": ["H"],
+    "summer_bbq": ["H", "M"],
     "convenient_breakfast": ["H"],
     "energy_beveragist": ["H"],
     "houses_with_children": ["H", "M", "L"],
