@@ -10,7 +10,7 @@ class segmentations:
     "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine",
     "low_fodmap", "mediterranean_diet", "organic", "salty_snackers",
     "non_veg", "low_salt", "low_protein", "heart_friendly", "macrobiotic",
-    "high_protein",
+    "high_protein", 'juicing_beveragust',
   ]
   percentile_segmentations = percentile_segmentations
   fuel_segmentations = ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"]
@@ -139,6 +139,8 @@ def get_propensity_composition(segmentation_name):
     'casual_auto_fixers': ["H", "M"],
     'metropolitan': ['H'],
     'micropolitan': ['H'],
+    'juicing_beveragust': ['H', 'M'],
+
   }
   return(propensity_dict[segmentation_name])
 
