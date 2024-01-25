@@ -216,13 +216,15 @@ def main(
 # COMMAND ----------
 
 #Example Usage
+import toolbox.config as con
+seg = "high_protein"
+segment = con.segmentation(seg)
+
 main(
-  backend_name="vegan",
+  backend_name=seg,
   groupName="Food & Beverage",
-  selectedValues=["H"],
+  frontend_name="High Protein Product Buyers",
+  description="Buyers who prefer to purchase products that contain protein branded descriptions including protein bars, protein powdered supplements, meat snacks, smoked sausages and protein shakes and high protein vegetables.",
+  selectedValues=segment.propensities,
   #output_dir="abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress/",
 )
-
-# COMMAND ----------
-
-
