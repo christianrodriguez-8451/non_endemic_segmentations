@@ -388,6 +388,72 @@ commodity_segmentations = {
     'live': False,
   }
 }
+sensitive_segmentations = {
+  "scotch": {
+    "commodities": ["SCOTCH"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "vodka": {
+    "commodities": ["VODKA"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "rum": {
+    "commodities": ["RUM"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "tequila": {
+    "commodities": ["TEQUILA"],
+    "sub_commodities": [],
+    "weeks": 26
+  },  
+  "gin": {
+    "commodities": ["GIN"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "cognac": {
+    "commodities": [],
+    "sub_commodities": ["COGNAC"],
+    "weeks": 26
+  },
+  "brandy": {
+    "commodities": [],
+    "sub_commodities": ["BRANDY"],
+    "weeks": 26
+  },
+  "bourbon": {
+    "commodities": [],
+    "sub_commodities": [
+      "BOURBON/TN WHISKEY",
+      "BOURBON/TN WHISKEY (42 UNDER PROOF)", 
+      "BOURBON/TN WHISKEY (42 UNDER P"
+    ],
+    "weeks": 26
+  },
+  "whiskey": {
+    "commodities": [],
+    "sub_commodities": [
+      "BLENDED WHISKEY", "BLENDED WHISKEY(42 UNDER PROOF)",
+      "BLENDED WHISKEY(42 UNDER PROOF",
+      "CANADIAN WHISKEY", "CANADIAN WHISKEY(42 UNDER PROOF)",
+      "CANADIAN WHISKEY(42 UNDER PROO"
+    ],
+    "weeks": 26
+  },
+  "liquor": {
+    "commodities": [
+      "SCOTCH", "RUM",
+      "VODKA", "TEQUILA",
+      "GIN", "BRANDY",
+      "N. AMER WHISKEY", "LIQUOR"
+    ],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+}
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
 percentile_segmentations = [
