@@ -19,7 +19,7 @@ con.segmentations.all_segmentations
 
 # COMMAND ----------
 
-segment = con.segmentation("macrobiotic")
+segment = con.segmentation("gasoline")
 segment.name
 
 # COMMAND ----------

@@ -105,6 +105,7 @@ for s in list(segments_dict.keys()):
 
   #Visually see commodities and sub-commodities used (QC)
   temp = lil_acds.select("commodity", "sub_commodity")
+  temp = temp.orderBy(["commodity", "sub_commodity"])
   temp = temp.dropDuplicates()
   print(temp.show(50, truncate=False))
 
