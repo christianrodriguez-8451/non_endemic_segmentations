@@ -453,6 +453,79 @@ sensitive_segmentations = {
     "sub_commodities": [],
     "weeks": 26
   },
+  "beer": {
+    "commodities": [
+      "DOMESTIC BEER", "DOMESTIC BELOW PREMIUM", "DOMESTIC PREMIUM", "DOMESTIC ABOVE PREMIUM",
+      "IMPORTED BEERS", "CRAFT/MICRO BEERS", "BEER OTHER",
+    ],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "domestic_beer": {
+    "commodities": [
+      "DOMESTIC BEER",
+      "DOMESTIC BELOW PREMIUM",
+      "DOMESTIC PREMIUM",
+      "DOMESTIC ABOVE PREMIUM",
+    ],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "domestic_below_premium_beer": {
+    "commodities": ["DOMESTIC BELOW PREMIUM"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "domestic_premium_beer": {
+    "commodities": ["DOMESTIC PREMIUM"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "domestic_above_premium_beer": {
+    "commodities": ["DOMESTIC ABOVE PREMIUM"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "imported_beer": {
+    "commodities": ["IMPORTED BEERS"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "imported_asian_beer": {
+    "commodities": [],
+    "sub_commodities": ["ASIAN BEER"],
+    "weeks": 26
+  },
+  "imported_canadian_beer": {
+    "commodities": [],
+    "sub_commodities": ["CANADIAN BEER"],
+    "weeks": 26
+  },
+  "imported_european_beer": {
+    "commodities": [],
+    "sub_commodities": ["EUROPEAN", "BELGIUM", "GERMAN BEER", "UK/IRELAND BEER"],
+    "weeks": 26
+  },
+  "imported_hispanic_beer": {
+    "commodities": [],
+    "sub_commodities": ["HISPANIC BEER"],
+    "weeks": 26
+  },
+  "craft_beer": {
+    "commodities": ["CRAFT/MICRO BEERS"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "craft_national_beer": {
+    "commodities": [],
+    "sub_commodities": ["NATIONAL CRAFT"],
+    "weeks": 26
+  },
+  "craft_local_beer": {
+    "commodities": [],
+    "sub_commodities": ["LOCAL/REGIONAL CRAFT"],
+    "weeks": 26
+  },
 }
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
