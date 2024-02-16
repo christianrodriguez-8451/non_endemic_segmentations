@@ -19,6 +19,302 @@ class segmentations:
   all_segmentations = funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations
   all_segmentations.sort()
 
+#Dictionary that contains name on Prism UI, group name on Prism UI,
+#and propensities used in the json templates.
+audience_dict = {
+  "free_from_gluten": {
+    "frontend_name": "Gluten-Free Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "grain_free": {
+    "frontend_name": "Grain-Free Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "healthy_eating": {
+    "frontend_name": "Nutrient Dense Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "heart_friendly": {
+    "frontend_name": "Wholesome Food Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "ketogenic": {
+    "frontend_name": "Keto Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "kidney-friendly": {
+    "frontend_name": "Lean Meat Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "lactose_free": {
+    "frontend_name": "Lactose-Free Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+  "low_bacteria": {
+    "frontend_name": "Low Bacteria Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "low_protein": {
+    "frontend_name": "Low Protein Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "low_salt": {
+    "frontend_name": "Low Salt Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "macrobiotic": {
+    "frontend_name": "Macro Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "non_veg": {
+    "frontend_name": "Non-Vegetarian Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "paleo": {
+    "frontend_name": "Paleo Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "vegan": {
+    "frontend_name": "Vegan Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "vegetarian": {
+    "frontend_name": "Vegetarian Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "beveragist": {
+    "frontend_name": "Beverage Product Buyers",
+    "segment_type": "Food & Beverage",
+    "ranking_method": "funlo",
+    "propensity_compisition": ["H", "M"],
+  },
+  "breakfast_buyers": {
+    "frontend_name": "Breakfast Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "hispanic_cuisine": {
+    "frontend_name": "Hispanic Cuisine Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "juicing_beveragust": {
+    "frontend_name": "Juicing Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "organic": {
+    "frontend_name": "Organic Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "salty_snackers": {
+    "frontend_name": "Snack Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "high_protein": {
+    "frontend_name": "High Protein Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "raw_food": {
+    "frontend_name": "Raw Food Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "pescetarian": {
+    "frontend_name": "Fish Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "without_pork": {
+    "frontend_name": "Pork-Free Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "mediterranean_diet": {
+    "frontend_name": "Mediterranean Cuisine Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "low_fodmap": {
+    "frontend_name": "Fermentable-Free FODMAP Friendly Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "beverage_enchancers": {
+    "frontend_name": "Beverage Enhancer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "convenient_breakfast": {
+    "frontend_name": "Convenient Breakfast Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "energy_beveragist": {
+    "frontend_name": "Energy Beverage Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "asian_cuisine": {
+    "frontend_name": "Asian Cuisine Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "pizza_meal_households": {
+    "frontend_name": "Pizza Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "natural_beveragist": {
+    "frontend_name": "Natural Beverage Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "fruit_and_natural_snackers": {
+    "frontend_name": "Fruit Snack Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "isotonic_beveragist": {
+    "frontend_name": "Isotonic Beverage Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "meat_snackers": {
+    "frontend_name": "Protein Snack Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "fitness_enthusiast": {
+    "frontend_name": "",
+    "segment_type": "Household",
+    "propensity_compisition": ["H"],
+  },
+  "casual_auto_fixers": {
+    "frontend_name": "Casual Automobile Fixers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "summer_bbq": {
+    "frontend_name": "Grilling Enthusiasts",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "artsy_folk": {
+    "frontend_name": "Arts & Crafts Enthusiasts",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+  "camper": {
+    "frontend_name": "Camping Enthusiasts",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+  "indoor_décor_and_gardening": {
+    "frontend_name": "Indoor Gardening Buyers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "outdoor_décor_and_gardening": {
+    "frontend_name": "Outdoor Gardening Buyers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "reader": {
+    "frontend_name": "Reading Enthusiasts",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "gasoline": {
+    "frontend_name": "High Volume Fuel Fillers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H"],
+  },
+  "gasoline_premium_unleaded": {
+    "frontend_name": "Premium Unleaded Fuel Buyers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "gasoline_reg_unleaded": {
+    "frontend_name": "Regular Unleaded Fuel Buyers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H"],
+  },
+  "gasoline_unleaded_plus": {
+    "frontend_name": "Unleaded Plus Fuel Buyers",
+    "segment_type": "Household",
+    "propensity_compisition": ["H", "M"],
+  },
+  "christmas": {
+    "frontend_name": "Winter Holiday Enthusiasts",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+  "easter": {
+    "frontend_name": "Spring Holiday Enthusiasts",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+  "halloweeners": {
+    "frontend_name": "Halloween Enthusiasts",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+  "back-to-school": {
+    "frontend_name": "Back-to-School Product Shoppers",
+    "segment_type": "Event",
+    "propensity_compisition": ["H", "M"],
+  },
+  "roadies": {
+    "frontend_name": "",
+    "segment_type": "Event",
+    "propensity_compisition": ["H", "M"],
+  },
+  "travelers": {
+    "frontend_name": "",
+    "segment_type": "Event",
+    "propensity_compisition": ["H", "M"],
+  },
+  "metropolitan": {
+    "frontend_name": "Metropolitans",
+    "segment_type": "Geo-Specific",
+    "propensity_compisition": ['H'],
+  },
+  "micropolitan": {
+    "frontend_name": "Micropolitans",
+    "segment_type": "Geo-Specific",
+    "propensity_compisition": ['H'],
+  },
+  "beautists": {
+    "frontend_name": "Beauty Product Buyers",
+    "segment_type": "Beauty/Personal Care",
+    "propensity_compisition": ['H'],
+  },
+  "houses_with_children": {
+    "frontend_name": "Household With Children",
+    "segment_type": "Life Stage",
+    "propensity_compisition": ["H", "M", "L"],
+  },
+}
+
 #TODO: Make a class that groups the segmentations by how their UPC lists
 # are generated. This will make it easy to track their UPC lists too.  
 
@@ -39,7 +335,8 @@ def get_type(segmentation_name):
 
   else:
     message = (
-      "ERROR!!!"
+      "{} is not present in any of the lists contained withing the 'segmentations' class." +
+      "Make sure to update the 'segmentations' class or config files as appropiate."
     )
     raise ValueError(message)
 
@@ -82,79 +379,17 @@ def get_files(segmentation_name):
   files.sort()
   return(files)
 
-def get_propensity_composition(segmentation_name):
-  """
-  """
-  propensity_dict = {
-    "free_from_gluten": ["H", "M"],
-    "grain_free": ["H", "M"],
-    "healthy_eating": ["H", "M"],
-    "heart_friendly": ["H"],
-    "ketogenic": ["H", "M"],
-    "kidney-friendly": ["H", "M"],
-    "lactose_free": ["H", "M", "L"],
-    "low_bacteria": ["H", "M"],
-    "low_protein": ["H", "M"],
-    "low_salt": ["H", "M"],
-    "paleo": ["H", "M"],
-    "vegan": ["H", "M"],
-    "vegetarian": ["H"],
-    "non_veg": ["H", "M"],
-    "macrobiotic": ["H", "M"],
-    "salty_snackers": ["H", "M"],
-    "organic": ["H", "M"],
-    "mediterranean_diet": ["H", "M"],
-    "low_fodmap": ["H", "M"],
-    "beveragist": ["H", "M"],
-    "hispanic_cuisine": ["H", "M"],
-    "breakfast_buyers": ["H", "M"],
-    "gasoline_premium_unleaded": ["H", "M"],
-    "gasoline_unleaded_plus": ["H", "M"],
-    "gasoline_reg_unleaded": ["H"],
-    "gasoline": ["H"],
-    "beautists": ["H"],
-    "beverage_enchancers": ["H"],
-    "summer_bbq": ["H", "M"],
-    "convenient_breakfast": ["H"],
-    "energy_beveragist": ["H"],
-    "houses_with_children": ["H", "M", "L"],
-    "high_protein": ["H"],
-    "artsy_folk": ["H", "M", "L"],
-    "asian_cuisine": ["H"],
-    "camper": ["H", "M", "L"],
-    "christmas": ["H", "M", "L"],
-    "easter": ["H", "M", "L"],
-    "halloweeners": ["H", "M", "L"],
-    "roadies": ["H", "M"],
-    "travelers": ["H", "M"],
-    "back-to-school": ["H", "M"],
-    "fitness_enthusiast": ["H"],
-    'fruit_and_natural_snackers': ["H"],
-    'indoor_décor_and_gardening': ["H", "M"],
-    'isotonic_beveragist': ["H"],
-    'meat_snackers': ["H"],
-    'natural_beveragist': ["H", "M"],
-    'outdoor_décor_and_gardening': ["H", "M"],
-    'pizza_meal_households': ["H"],
-    'reader': ["H", "M"],
-    'casual_auto_fixers': ["H", "M"],
-    'metropolitan': ['H'],
-    'micropolitan': ['H'],
-    'juicing_beveragust': ['H', 'M'],
-    'without_pork': ['H'],
-    'pescetarian': ['H', 'M'],
-    'raw_food': ['H'],
-  }
-  return(propensity_dict[segmentation_name])
-
 #Class for each segmentation that contains the following 
-#attributes: name, type, propensities, directory, files
+#attributes: name, frontend name, segment type, type, propensities,
+#directory, files.
 #Example usage: segmentation("free_from_gluten")
 class segmentation:
   def __init__(self, segmentation_name):    
     self.name = segmentation_name
+    self.frontend_name = audience_dict[segmentation_name]["frontend_name"]
+    self.segment_type = audience_dict[segmentation_name]["segment_type"]
     self.type = get_type(segmentation_name)
-    self.propensities = get_propensity_composition(segmentation_name)
+    self.propensities = audience_dict[segmentation_name]["propensity_compisition"]
     self.directory = get_directory(segmentation_name)
     self.files = get_files(segmentation_name)
     #self.upc_directory = get_upc_directory(segmentation_name)
