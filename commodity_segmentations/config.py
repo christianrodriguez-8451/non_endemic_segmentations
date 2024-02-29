@@ -57,7 +57,7 @@ commodity_segmentations = {
     'weeks': 52,
     'live': False,
   },
-  'outdoor_décor_and_gardening': {
+  'outdoor_decor_and_gardening': {
     'frontend_name': '',
     'commodities': [
       'BIRD/SQRL', 'DECORATIVE GARDEN', 'FERNS (OUTDOOR)', 'FERTILIZERS',
@@ -71,7 +71,7 @@ commodity_segmentations = {
     'weeks': 52,
     'live': False,
   },
-  'indoor_décor_and_gardening': {
+  'indoor_decor_and_gardening': {
     'frontend_name': '',
     'commodities': [
       'EASTER LILY', 'FLORAL - FOLIAGE PLANTS', 'FLORAL - FLOWING PLANTS',
@@ -531,9 +531,9 @@ sensitive_segmentations = {
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
 percentile_segmentations = [
   "fitness_enthusiast", "beautists", "beverage_enchancers", "back-to-school",
-  "summer_bbq", "convenient_breakfast", "energy_beveragist", "indoor_décor_and_gardening",
+  "summer_bbq", "convenient_breakfast", "energy_beveragist", "indoor_decor_and_gardening",
   'houses_with_children', 'fruit_and_natural_snackers', 'isotonic_beveragist', 'meat_snackers',
-  'natural_beveragist', 'outdoor_décor_and_gardening', 'pizza_meal_households', 'reader',
+  'natural_beveragist', 'outdoor_decor_and_gardening', 'pizza_meal_households', 'reader',
   'asian_cuisine', 'artsy_folk', 'camper',
   'halloweeners', 'christmas', 'easter', 'casual_auto_fixers',
 ]

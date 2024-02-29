@@ -228,12 +228,12 @@ audience_dict = {
     "segment_type": "Household",
     "propensity_compisition": ["H", "M", "L"],
   },
-  "indoor_décor_and_gardening": {
+  "indoor_decor_and_gardening": {
     "frontend_name": "Indoor Gardening Buyers",
     "segment_type": "Household",
     "propensity_compisition": ["H", "M"],
   },
-  "outdoor_décor_and_gardening": {
+  "outdoor_decor_and_gardening": {
     "frontend_name": "Outdoor Gardening Buyers",
     "segment_type": "Household",
     "propensity_compisition": ["H", "M"],
