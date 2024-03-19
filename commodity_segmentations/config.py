@@ -526,6 +526,11 @@ sensitive_segmentations = {
     "sub_commodities": ["LOCAL/REGIONAL CRAFT"],
     "weeks": 26
   },
+  "fmb_and_hard_seltzers": {
+    "commodities": [],
+    "sub_commodities": ["FMB FLAVORS", "HARD SELTZER/WATER"],
+    "weeks": 26
+  },
 }
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking

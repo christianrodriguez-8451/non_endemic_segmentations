@@ -35,6 +35,8 @@ import commodity_segmentations.config as con
 import matplotlib.pyplot as plt
 import random
 import resources.config as config
+import seaborn as sns
+import os
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
@@ -267,7 +269,7 @@ def display_counts(df, col, limit=15):
 
   Returns
   ----------
-  None. Counts and visual are displayed cell output.
+  None. Counts and visual are displayed as cell output.
   """
   #Get counts - organize from most dominant to least
   counts_df = df.\
@@ -295,6 +297,81 @@ def display_counts(df, col, limit=15):
   plt.tight_layout()  # Adjust layout to prevent clipping of labels
   plt.show()
 
+def display_histplot(df, col):
+  """Visualizes a histogram for the inputted
+  column in the given dataframe.
+
+  Example
+  ----------
+    display_histplot(df, "dot_product")
+
+  Parameters
+  ----------
+  df: pyspark.sql.dataframe.DataFrame
+    PySpark dataframe contains the data we'd like
+    to conduct the group-by count on.
+
+  col: str
+    String that the defines the column name of the 
+    column of interest.
+
+  Returns
+  ----------
+  None. Visual is displayed as cell output.
+  """
+
+  pandas_df = df.toPandas()
+
+  plt.figure(figsize=(10, 6))
+  sns.histplot(pandas_df[col], kde=True)
+  plt.title("Distribution of {}".format(col))
+  plt.xlabel("Values")
+  plt.ylabel("Frequency")
+  plt.show()
+
+def write_out(df, fp, delim=",", fmt="csv"):
+  """Writes out PySpark dataframe as a csv file
+  that can be downloaded for Azure and loaded into
+  Excel very easily.
+
+  Example
+  ----------
+    write_out(df, "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/data_analysis.csv")
+
+  Parameters
+  ----------
+  df: pyspark.sql.dataframe.DataFrame
+    PySpark dataframe contains the data we'd like
+    to conduct the group-by count on.
+
+  fp: str
+    String that the defines the column name of the 
+    column of interest.
+
+  delim: str
+    String that specifies which delimiter to use in the
+    write-out. Default value is ','.
+
+  fmt: str
+    String that specifies which format to use in the
+    write-out. Default value is 'csv'.
+
+  Returns
+  ----------
+  None. File is written out specified Azure location.
+  """
+  #Placeholder filepath for intermediate processing
+  temp_target = os.path.dirname(fp) + "/" + "temp"
+
+  #Write out df as partitioned file. Write out ^ delimited
+  df.coalesce(1).write.options(header=True, delimiter=delim).mode("overwrite").format(fmt).save(temp_target)
+
+  #Copy desired file from parititioned directory to desired location
+  temporary_fp = os.path.join(temp_target, dbutils.fs.ls(temp_target)[3][1])
+  dbutils.fs.cp(temporary_fp, fp)
+  dbutils.fs.rm(temp_target, recurse=True)
+
+
 # COMMAND ----------
 
 #Get latest UPC file
@@ -311,7 +388,8 @@ seg_fp = dir_contents[-1]
 df = spark.read.format("delta").load(seg_fp)
 
 df = df.select("gtin_no")
-df.show(50, truncate=False)
+#df.show(50, truncate=False)
+df.count()
 
 # COMMAND ----------
 
@@ -345,12 +423,17 @@ pim = pim.dropDuplicates(["gtin_no"])
 
 #Join with upc lists for analysis down the road
 df = df.join(pim, "gtin_no")
+#comms = []
+#scomms = ["FMB FLAVORS", "HARD SELTZER/WATER"]
+#df = pim.filter((f.col("commodity").isin(comms)|f.col("sub_commodity").isin(scomms)))
 
 #Print the info of the image UPCs for more context
 image_df = df.filter(f.col("gtin_no").isin(image_upcs))
 image_df = image_df.select("gtin_no", "product_description", "commodity", "sub_commodity")
 image_df = image_df.orderBy(f.desc("gtin_no"))
 image_df.show(50, truncate=False)
+
+df.count()
 
 # COMMAND ----------
 
@@ -383,3 +466,18 @@ display_counts(df, "commodity")
 # COMMAND ----------
 
 display_counts(df, "sub_commodity")
+
+# COMMAND ----------
+
+#Code chunk used to provide example products for marketing
+for k in con.sensitive_segmentations.keys():
+  comms = con.sensitive_segmentations[k]["commodities"]
+  scomms = con.sensitive_segmentations[k]["sub_commodities"]
+  #comms = []
+  #scomms = ["FMB FLAVORS", "HARD SELTZER/WATER"]
+
+  filtered_df = pim.filter((f.col("commodity").isin(comms)|f.col("sub_commodity").isin(scomms)))
+  upcs = filtered_df.select("product_description").limit(10).collect()
+  upcs = [row.product_description for row in upcs]
+  print(k + ": " + ', '.join(upcs) + "\n\n")
+
