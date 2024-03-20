@@ -90,6 +90,12 @@ def create_df_groupby_propensity_time(segmentation):
   # reading in the propensity
   propensity = config.get_propensity_composition(segmentation)
 
+  # reading in the segment_type
+  segment_type = config.get_type(segmentation)
+
+  # reading in the frontend_name
+  frntend_name = config.audience_dict[segmentaion]["frontend_name"]
+
   # formatting propensity for a later f.lit in the final df 
   formatting_propensity = ''.join(propensity)
 
@@ -118,6 +124,8 @@ def create_df_groupby_propensity_time(segmentation):
               ).withColumnRenamed("stratum_week", "time")
               .withColumn("segment", f.lit(segmentation))
               .withColumn("propensity", f.lit(formatting_propensity))
+              .withColumn("Segment_type", f.lit(segment_type))
+              .withColumn("Frontend_name", f.lit(frntend_name))
   )
 
   return group_by

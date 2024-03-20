@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 
 # spark packages
 import pyspark.sql.functions as f
+import pyspark.sql.functions as F
 from pyspark.sql.window import Window
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import *
@@ -54,7 +55,7 @@ def create_df_groupby_propensity_time(segmentation:str):
   #onsite =
 
   #reading in offsite column 
-  Offsite = config.add_facebook_pandora_flags(hshd_universe_df)
+  Offsite = config.add_facebook_pandora_flags(logger , hshd_universe_df , dig_cus_adv_pref_flag_N)
    
   # reading in the frontend_name
   frntend_name = config.audience_dict[segmentation]["frontend_name"]
@@ -97,66 +98,94 @@ def create_df_groupby_propensity_time(segmentation:str):
 
 # COMMAND ----------
 
-def create_df_groupby_propensity_time(segmentation:str):
+def add_facebook_pandora_flags(logger, hshd_universe_df, dig_cus_adv_pref_flag_N):
+    logger.info("Adding Facebook and Pandora Flags to Weekly eligible")
+    
+    if "ADV_PREF_FLAG" not in hshd_universe_df.columns:
+        hshd_universe_df = hshd_universe_df.withColumn("ADV_PREF_FLAG", lit("N"))
+    
+    if "KPM_LT_ELIGIBLE_FLAG" not in hshd_universe_df.columns:
+        hshd_universe_df = hshd_universe_df.withColumn("KPM_LT_ELIGIBLE_FLAG", lit("N"))
+    
+    hshd_universe_df = hshd_universe_df.join(
+        dig_cus_adv_pref_flag_N.withColumnRenamed("ADV_PREF_FLAG", "DIG_CUS_ADV_PREF_FLAG"),
+        hshd_universe_df["EHHN"] == dig_cus_adv_pref_flag_N["EHHN"],
+        "left_outer") \
+        .drop(dig_cus_adv_pref_flag_N["EHHN"]) \
+        .withColumn("DIG_CUS_ADV_PREF_FLAG", col("DIG_CUS_ADV_PREF_FLAG")) \
+        .drop(dig_cus_adv_pref_flag_N["ADV_PREF_FLAG"]) \
+        .withColumn("DIG_CUS_ADV_PREF_FLAG", expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'N' THEN DIG_CUS_ADV_PREF_FLAG ELSE 'Y' END")) \
+        .withColumn("FACEBOOK_FLAG", 
+                    expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'Y' AND HAVE_PII_FLAG = 'Y' AND KPM_LT_ELIGIBLE_FLAG = 'N' THEN 'Y' ELSE 'N' END")) \
+        .withColumn("PANDORA_FLAG", 
+                    expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'Y' AND HAVE_PII_FLAG = 'Y' AND KPM_LT_ELIGIBLE_FLAG = 'N' THEN 'Y' ELSE 'N' END"))
+    
+    hshd_universe_df = hshd_universe_df.drop("DIG_CUS_ADV_PREF_FLAG")
+    
+    return hshd_universe_df
 
-  # getting the file path
-  root = config.get_directory(segmentation)
+# COMMAND ----------
 
-  # reading in the propensity
-  propensity = config.audience_dict[segmentation]["propensity_compisition"]
+import logging
+logger = logging.getLogger()  # Assume you have a logger object
 
-  # reading in the segment_type
-  segment_type = config.get_type(segmentation)
+hshd_universe_df = spark.createDataFrame([(1, 'Y')], ['EHHN', 'HAVE_PII_FLAG'])  # Replace with your actual DataFrame
+dig_cus_adv_pref_flag_N = spark.createDataFrame([(1, 'Y')], ['EHHN', 'ADV_PREF_FLAG'])  # Replace with your actual DataFrame
 
-  # reading in the frontend_name
-  frntend_name = config.audience_dict[segmentation]["frontend_name"]
+# COMMAND ----------
 
-  # formatting propensity for a later f.lit in the final df 
-  formatting_propensity = ''.join(propensity)
+import logging
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, expr, lit
 
-  #reading in offsite column 
-  Offsite = config.add_facebook_pandora_flags(hshd_universe_df)
+def add_facebook_pandora_flags(logger, hshd_universe_df, dig_cus_adv_pref_flag_N):
+    logger.info("Adding Facebook and Pandora Flags to Weekly eligible")
+    
+    if "ADV_PREF_FLAG" not in hshd_universe_df.columns:
+        hshd_universe_df = hshd_universe_df.withColumn("ADV_PREF_FLAG", lit("N"))
+    
+    if "KPM_LT_ELIGIBLE_FLAG" not in hshd_universe_df.columns:
+        hshd_universe_df = hshd_universe_df.withColumn("KPM_LT_ELIGIBLE_FLAG", lit("N"))
+    
+    hshd_universe_df = hshd_universe_df.join(
+        dig_cus_adv_pref_flag_N.withColumnRenamed("ADV_PREF_FLAG", "DIG_CUS_ADV_PREF_FLAG"),
+        hshd_universe_df["EHHN"] == dig_cus_adv_pref_flag_N["EHHN"],
+        "left_outer") \
+        .drop(dig_cus_adv_pref_flag_N["EHHN"]) \
+        .withColumn("DIG_CUS_ADV_PREF_FLAG", col("DIG_CUS_ADV_PREF_FLAG")) \
+        .drop(dig_cus_adv_pref_flag_N["ADV_PREF_FLAG"]) \
+        .withColumn("DIG_CUS_ADV_PREF_FLAG", expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'N' THEN DIG_CUS_ADV_PREF_FLAG ELSE 'Y' END")) \
+        .withColumn("FACEBOOK_FLAG", 
+                    expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'Y' AND HAVE_PII_FLAG = 'Y' AND KPM_LT_ELIGIBLE_FLAG = 'N' THEN 'Y' ELSE 'N' END")) \
+        .withColumn("PANDORA_FLAG", 
+                    expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'Y' AND HAVE_PII_FLAG = 'Y' AND KPM_LT_ELIGIBLE_FLAG = 'N' THEN 'Y' ELSE 'N' END"))
+    
+    hshd_universe_df = hshd_universe_df.drop("DIG_CUS_ADV_PREF_FLAG")
+    
+    return hshd_universe_df
 
-  # initiating an empty df for the loop
-  one_segment_master_file = None
+# Example usage:
+logger = logging.getLogger()  # Replace with your logger object
+hshd_universe_df = spark.createDataFrame([(1, 'Y')], ['EHHN', 'HAVE_PII_FLAG'])  # Replace with your actual DataFrame
+dig_cus_adv_pref_flag_N = spark.createDataFrame([(1, 'Y')], ['EHHN', 'ADV_PREF_FLAG'])  # Replace with your actual DataFrame
 
-  # loop to read in all files for one segment 
-  for i in config.get_files(segmentation):
+final_df = add_facebook_pandora_flags(logger, hshd_universe_df, dig_cus_adv_pref_flag_N)
+display(final_df)
 
-    one_file = root + i
-    read_in = spark.read.format("delta").load(one_file)
+# COMMAND ----------
 
-    if one_segment_master_file is None:
-      one_segment_master_file = read_in
-    else:
-      one_segment_master_file = one_segment_master_file.union(read_in)
+import logging
+from pyspark.sql.functions import col
+logger = logging.getLogger()  # Assume you have a logger object
 
-  # filtering to just the propensities in the segment 
-  one_segment_master_file_propensity = one_segment_master_file.filter(f.col("segment").isin(propensity))
 
-  # group by date to sum ehhn by time
-  # add columns to indicate segment and propensity 
-  # check if "stratum_week" column exists
-  if "stratum_week" in one_segment_master_file_propensity.columns:
-    # group by "stratum_week" and calculate count distinct of "ehhn"
-    group_by = (one_segment_master_file_propensity
-                .groupBy("stratum_week")
-                .agg(f.countDistinct("ehhn").alias("Household_Count"))
-                .withColumnRenamed("stratum_week", "Time")
-                .withColumn("Backend_Name", f.lit(segmentation))
-                .withColumn("Propensity", f.lit(formatting_propensity))
-                .withColumn("Propensity_type", f.lit(segment_type))
-                .withColumn("Segment", f.lit(frntend_name))
-                .withColumn("Offsite_Eligibility_Count", f.lit(Offsite))
-                .withColumn("Onsite_Eligibility_Count", f.lit(None))
-                )
-    return group_by
-  else:
-    return None
+hshd_universe_df = spark.createDataFrame([(1, 'Y')], ['EHHN', 'HAVE_PII_FLAG'])  # Replace with your actual DataFrame
+dig_cus_adv_pref_flag_N = spark.createDataFrame([(1, 'Y')], ['EHHN', 'ADV_PREF_FLAG'])  # Replace with your actual DataFrame
 
 # COMMAND ----------
 
 all_segment_master_file = None
+# from pyspark.sql.functions import F
 
 for i in config.segmentations.all_segmentations:
   run_segment = create_df_groupby_propensity_time(i)
@@ -166,6 +195,23 @@ for i in config.segmentations.all_segmentations:
       all_segment_master_file = run_segment
     else:
       all_segment_master_file = all_segment_master_file.union(run_segment)
+
+# COMMAND ----------
+
+from pyspark.sql.functions import col
+
+all_segment_master_file = None
+
+for i in config.segmentations.all_segmentations:
+  run_segment = create_df_groupby_propensity_time(i)
+
+  if run_segment is not None:
+    if all_segment_master_file is None:
+      all_segment_master_file = run_segment
+    else:
+      all_segment_master_file = all_segment_master_file.union(run_segment)
+
+all_segment_master_file.display()
 
 # COMMAND ----------
 
