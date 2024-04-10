@@ -95,6 +95,7 @@ def onprem_template(
     backend_name,
     frontend_name,
     description,
+    tags,
     segmentationId,
     selectedValues,
     ):
@@ -104,6 +105,7 @@ def onprem_template(
     template = {
     "name": frontend_name.strip(),
     "description": description.strip(),
+    "tags": tags,
     "cells": [
         {
             "type": "PRE_DEFINED_SEGMENTATION",
@@ -140,8 +142,8 @@ def writeout_json(json_dict, output_dir, output_fn):
 
 class DefaultParameters:
   def __init__(self):
-    self.frontend_name = "MARKETING - INSERT FINAL NAME HERE"
-    self.description = "MARKETING - INSERT FINAL DESCRIPTION HERE"
+    self.frontend_name = "PLACEHOLDER FOR MARKETING"
+    self.description = "PLACEHOLDER FOR MARKETING"
     self.columnName = "segment"
     self.availableValues = [
       {
@@ -175,6 +177,7 @@ class DefaultParameters:
 def main(
   backend_name,
   groupName,
+  tags,
   frontend_name = DefaultParameters().frontend_name,
   description = DefaultParameters().description,
   columnName=DefaultParameters().columnName,
@@ -207,6 +210,7 @@ def main(
     backend_name=backend_name,
     frontend_name=frontend_name,
     description=description,
+    tags=tags,
     selectedValues=selectedValues,
     segmentationId=id_str,
   )
@@ -217,14 +221,21 @@ def main(
 
 #Example Usage
 import toolbox.config as con
-seg = "high_protein"
+seg = "fmb_and_hard_seltzers"
 segment = con.segmentation(seg)
+tags = ["Alcohol"]
+description = "Buyers who have purchased hard seltzers or malt beverages in the past 26 weeks, enjoying their refreshing nature, convenience, and diversity of flavors."
 
 main(
   backend_name=seg,
-  groupName="Food & Beverage",
-  frontend_name="High Protein Product Buyers",
-  description="Buyers who prefer to purchase products that contain protein branded descriptions including protein bars, protein powdered supplements, meat snacks, smoked sausages and protein shakes and high protein vegetables.",
+  frontend_name=segment.frontend_name,
+  description=description,
+  groupName=segment.segment_type,
+  tags = tags,
   selectedValues=segment.propensities,
-  #output_dir="abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress/",
 )
+print(description)
+
+# COMMAND ----------
+
+segment.propensities
