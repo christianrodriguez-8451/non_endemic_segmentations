@@ -29,7 +29,7 @@ con.segmentations.all_segmentations
 #Segmentation class has metadata on each segmentaion
 #data includes: name, frontend name, segment type, type, propensities,
 #directory, and files
-segment = con.segmentation("organic")
+segment = con.segmentation("vegetarian")
 segment.name
 
 # COMMAND ----------
@@ -61,3 +61,15 @@ segment.directory
 
 #Household files present for given segmentation
 segment.files
+
+# COMMAND ----------
+
+segment.upc_type
+
+# COMMAND ----------
+
+segment.upc_directory
+
+# COMMAND ----------
+
+segment.upc_files
