@@ -1,22 +1,26 @@
-from commodity_segmentations.config import percentile_segmentations
+from products_embedding.config import sentences_dict as em_dict, funlo_segmentations
+from commodity_segmentations.config import percentile_segmentations, commodity_segmentations as cs_dict, sensitive_segmentations as ss_dict
 from pyspark.dbutils import DBUtils
+
+embedding_segmentations = list(em_dict.keys())
+commodity_segmentations = list(cs_dict.keys())
+sensitive_segmentations = list(ss_dict.keys())
 
 #Class that holds segmentations live in production or are planned to be in production
 #As new segmentations productionize, make sure to add it in the appropiate segmentation list.
 class segmentations:
-  funlo_segmentations = [
-    "free_from_gluten", "grain_free", "healthy_eating",
-    "ketogenic", "kidney-friendly", "lactose_free", "low_bacteria", "paleo",
-    "vegan", "vegetarian", "beveragist", "breakfast_buyers", "hispanic_cuisine",
-    "low_fodmap", "mediterranean_diet", "organic", "salty_snackers",
-    "non_veg", "low_salt", "low_protein", "heart_friendly", "macrobiotic",
-    "high_protein", "juicing_beveragust", "without_pork", "pescetarian",
-    "raw_food",
-  ]
+  embedding_segmentations = embedding_segmentations
+  commodity_segmentations = commodity_segmentations
+  funlo_segmentations = funlo_segmentations
   percentile_segmentations = percentile_segmentations
   fuel_segmentations = ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"]
   geospatial_segmentations = ["roadies", "travelers", "metropolitan", "micropolitan"]
-  all_segmentations = funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations
+  sensitive_segmentations = sensitive_segmentations
+  all_segmentations = (
+    funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations + embedding_segmentations
+    + commodity_segmentations + sensitive_segmentations
+  )
+  all_segmentations = list(set(all_segmentations))
   all_segmentations.sort()
 
 #Dictionary that contains name on Prism UI, group name on Prism UI,
@@ -309,9 +313,174 @@ audience_dict = {
     "propensity_compisition": ['H'],
   },
   "houses_with_children": {
-    "frontend_name": "Household With Children",
+    "frontend_name": "Children Product Buyers",
     "segment_type": "Life Stage",
-    "propensity_compisition": ["H", "M", "L"],
+    "propensity_compisition": ["H", "M"],
+  },
+  "metabolic": {
+    "frontend_name": "Metabolic Product Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "scotch": {
+    "frontend_name": "Scotch Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "vodka": {
+    "frontend_name": "Vodka Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "rum": {
+    "frontend_name": "Rum Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "tequila": {
+    "frontend_name": "Tequila Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "gin": {
+    "frontend_name": "Gin Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "cognac": {
+    "frontend_name": "Cognac Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "brandy": {
+    "frontend_name": "Brandy Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "bourbon": {
+    "frontend_name": "Bourbon Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "whiskey": {
+    "frontend_name": "Whiskey Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "liquor": {
+    "frontend_name": "Liquor Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "ayervedic": {
+    "frontend_name": "Ayurvedic Cuisine Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "low_calorie": {
+    "frontend_name": "Low-Calorie Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "engine_2": {
+    "frontend_name": "Nutrient-Rich Enthusiasts",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "glycemic": {
+    "frontend_name": "Low Glycemic Lifestyle Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "plant_based_whole_foods": {
+    "frontend_name": "Plant-Powered Whole Foods Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "ovo-vegetarians": {
+    "frontend_name": "Ovo-Vegetarian Pantry Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "without_beef": {
+    "frontend_name": "Meat-Free Grocery Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "plant_based": {
+    "frontend_name": "Veggie-Focused Food Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H", "M"],
+  },
+  "domestic_beer": {
+    "frontend_name": "Domestic Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "domestic_below_premium_beer": {
+    "frontend_name": "Domestic Sub Premium Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "domestic_premium_beer": {
+    "frontend_name": "Domestic Premium Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "domestic_above_premium_beer": {
+    "frontend_name": "Domestic Premium Plus Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "imported_beer": {
+    "frontend_name": "Imported Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "imported_asian_beer": {
+    "frontend_name": "Imported Asian Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "imported_canadian_beer": {
+    "frontend_name": "Imported Canadian Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "imported_european_beer": {
+    "frontend_name": "Imported European Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "imported_hispanic_beer": {
+    "frontend_name": "Imported Hispanic Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "craft_beer": {
+    "frontend_name": "Craft Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "craft_national_beer": {
+    "frontend_name": "National Craft Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "craft_local_beer": {
+    "frontend_name": "Local Craft Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "beer": {
+    "frontend_name": "Beer Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+  },
+  "fmb_and_hard_seltzers": {
+    "frontend_name": "Hard Seltzer & Malt Beverage Buyers",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
   },
 }
 
@@ -333,10 +502,13 @@ def get_type(segmentation_name):
   elif segmentation_name in segmentations.geospatial_segmentations:
     segmentation_type = "geospatial"
 
+  elif segmentation_name in segmentations.sensitive_segmentations:
+    segmentation_type = "sensitive"
+
   else:
     message = (
-      "{} is not present in any of the lists contained withing the 'segmentations' class." +
-      "Make sure to update the 'segmentations' class or config files as appropiate."
+      "{} is not present in any of the lists contained within the 'segmentations' class.".format(segmentation_name) +
+      " Make sure to update the 'segmentations' class or config files as appropiate."
     )
     raise ValueError(message)
 
@@ -359,6 +531,9 @@ def get_directory(segmentation_name):
   elif segmentation_type == "geospatial":
     segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/{}/".format(segmentation_name)
 
+  elif segmentation_type == "sensitive":
+    segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/sensitive_segmentations/{}/".format(segmentation_name)
+
   return(segmentation_dir)
 
 def get_files(segmentation_name):
@@ -372,12 +547,79 @@ def get_files(segmentation_name):
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "stratum_week=" in x[1]]
 
-  elif segmentation_type in ["percentile", "fuel", "geospatial"]:
+  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive"]:
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
 
   files.sort()
   return(files)
+
+def get_upc_type(segmentation_name):
+  """
+  """
+  search_keys = list(em_dict.keys())
+  comm_keys = list(cs_dict.keys())
+
+  if (segmentation_name in search_keys) and (segmentation_name in comm_keys):
+    message = (
+      "{} is in both of the control dictionaries for ...."
+    )
+    raise ValueError(message)
+  elif segmentation_name in search_keys:
+    upc_type = "search_embedding"
+  elif segmentation_name in comm_keys:
+    upc_type = "commodities_subcommodities"
+  else:
+    upc_type = None
+
+  return(upc_type)
+
+
+def get_upc_directory(segmentation_name):
+  """
+  """
+  upc_type = get_upc_type(segmentation_name)
+
+  if upc_type == "search_embedding":
+    upc_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/diet_query_embeddings/"
+  elif upc_type == "commodities_subcommodities":
+    upc_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/upc_lists/{}/".format(segmentation_name)
+  else:
+    upc_dir = None
+
+  return(upc_dir)
+
+def get_upc_files(segmentation_name):
+  """
+  """
+  upc_type = get_upc_type(segmentation_name)
+  upc_dir = get_upc_directory(segmentation_name)
+
+  dbutils = DBUtils()
+  if upc_type == "search_embedding":
+    dirs = dbutils.fs.ls(upc_dir)
+    dirs = [x[1] for x in dirs if "cycle_date=" in x[1]]
+
+    #The upc files for search embeddings are separated across cycles
+    files = []
+    for d in dirs:
+      d_files = dbutils.fs.ls(upc_dir + d)
+      d_files = [x[1] for x in d_files]
+      d_files = [str(x).strip("/") for x in d_files]
+
+      if segmentation_name in d_files:
+        files += [d + segmentation_name + "/"]
+
+    files.sort()
+  elif upc_type == "commodities_subcommodities":
+    files = dbutils.fs.ls(upc_dir)
+    files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
+    files.sort()
+  else:
+    files = None
+
+  return(files)
+
 
 #Class for each segmentation that contains the following 
 #attributes: name, frontend name, segment type, type, propensities,
@@ -392,25 +634,13 @@ class segmentation:
     self.propensities = audience_dict[segmentation_name]["propensity_compisition"]
     self.directory = get_directory(segmentation_name)
     self.files = get_files(segmentation_name)
-    #self.upc_directory = get_upc_directory(segmentation_name)
-    #self.upc_files = get_upc_files(segmentation_name)
+    self.upc_type = get_upc_type(segmentation_name)
+    self.upc_directory = get_upc_directory(segmentation_name)
+    self.upc_files = get_upc_files(segmentation_name)
 
 #TODO: create read-in functions for household and UPC files?
 def read_in(segmentation_name, cycle=None):
   """
   """
-  return(None)
-
-#TODO: Create below functions for UPCs
-def get_upc_directory(segmentation_name):
-  """
-  """
-  #Need upc_segmentations class
-  return(None)
-
-def get_upc_files(segmentation_name):
-  """
-  """
-  #Need upc_segmentations class
   return(None)
 
