@@ -1,3 +1,6 @@
+#Weights used per quarter in funlo methodology
+DATE_RANGE_WEIGHTS = {4: 0.27, 3: 0.26, 2: 0.24, 1: 0.23}
+
 #Segmentations that go through search embeddings
 sentences_dict = {
   "ayervedic": "products include cooked grains, cooked vegetables, soups, and warm spices.  this also includes foods, light grains, and plenty of fruits and vegetables.",
