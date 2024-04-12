@@ -24,7 +24,7 @@ commodity_segmentations = {
   'fitness_enthusiast': {
     'frontend_name': '',
     'commodities': [
-      'ATHLETICS', 'EXERCISE', 'SPORTS NUTRITION',
+      'ATHLETICS', 'EXERCISE', 'NF SPORTS NUTRITION',
       'WOMENS ATHLETIC', 'JR SPORTWEAR TOPS', 'CHILDRENS ATHLETIC',
     ],
     'sub_commodities': [
