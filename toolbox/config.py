@@ -2,20 +2,16 @@ from products_embedding.config import sentences_dict as em_dict, funlo_segmentat
 from commodity_segmentations.config import percentile_segmentations, commodity_segmentations as cs_dict, sensitive_segmentations as ss_dict
 from pyspark.dbutils import DBUtils
 
-embedding_segmentations = list(em_dict.keys())
-commodity_segmentations = list(cs_dict.keys())
-sensitive_segmentations = list(ss_dict.keys())
-
 #Class that holds segmentations live in production or are planned to be in production
 #As new segmentations productionize, make sure to add it in the appropiate segmentation list.
 class segmentations:
-  embedding_segmentations = embedding_segmentations
-  commodity_segmentations = commodity_segmentations
+  embedding_segmentations = list(em_dict.keys())
+  commodity_segmentations = list(cs_dict.keys())
   funlo_segmentations = funlo_segmentations
   percentile_segmentations = percentile_segmentations
   fuel_segmentations = ["gasoline", "gasoline_premium_unleaded", "gasoline_unleaded_plus", "gasoline_reg_unleaded"]
   geospatial_segmentations = ["roadies", "travelers", "metropolitan", "micropolitan"]
-  sensitive_segmentations = sensitive_segmentations
+  sensitive_segmentations = list(ss_dict.keys())
   all_segmentations = (
     funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations + embedding_segmentations
     + commodity_segmentations + sensitive_segmentations
@@ -208,7 +204,7 @@ audience_dict = {
     "propensity_compisition": ["H"],
   },
   "fitness_enthusiast": {
-    "frontend_name": "",
+    "frontend_name": "Fitness Enthusiasts",
     "segment_type": "Household",
     "propensity_compisition": ["H"],
   },
@@ -288,12 +284,12 @@ audience_dict = {
     "propensity_compisition": ["H", "M"],
   },
   "roadies": {
-    "frontend_name": "",
+    "frontend_name": "Road Trippers",
     "segment_type": "Event",
     "propensity_compisition": ["H", "M"],
   },
   "travelers": {
-    "frontend_name": "",
+    "frontend_name": "Travel Enthusiasts",
     "segment_type": "Event",
     "propensity_compisition": ["H", "M"],
   },
