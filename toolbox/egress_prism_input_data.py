@@ -63,7 +63,7 @@ for seg in segs:
   filtered_count = filtered_df.count()
   print("{} household count: {}".format(seg, filtered_count))
 
-  threshold = 10000
+  threshold = 2000000
   if filtered_count < threshold:
     problem_segs += [seg]
     print("WARNING - Added {} to problematic segmentations.\n\n".format(seg))
