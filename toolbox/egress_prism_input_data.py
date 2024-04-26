@@ -34,7 +34,11 @@ import pyspark.sql.functions as f
 import datetime as dt
 
 #Get all productionized segmentations
-segs = con.segmentations.all_segmentations
+segs = (
+  con.segmentations.funlo_segmentations + con.segmentations.percentile_segmentations +
+  con.segmentations.sensitive_segmentations + con.segmentations.fuel_segmentations +
+  con.segmentations.geospatial_segmentations
+)
 segs.sort()
 problem_segs = []
 for seg in segs:
@@ -58,8 +62,8 @@ for seg in segs:
   filtered_df = df.filter(f.col("segment").isin(segment.propensities))
   filtered_count = filtered_df.count()
   print("{} household count: {}".format(seg, filtered_count))
-  #If that count is too low, void egressing the file and throw an error at the end
-  threshold = 1500000
+
+  threshold = 2000000
   if filtered_count < threshold:
     problem_segs += [seg]
     print("WARNING - Added {} to problematic segmentations.\n\n".format(seg))

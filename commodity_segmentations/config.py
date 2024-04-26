@@ -24,7 +24,7 @@ commodity_segmentations = {
   'fitness_enthusiast': {
     'frontend_name': '',
     'commodities': [
-      'ATHLETICS', 'EXERCISE', 'SPORTS NUTRITION',
+      'ATHLETICS', 'EXERCISE', 'NF SPORTS NUTRITION',
       'WOMENS ATHLETIC', 'JR SPORTWEAR TOPS', 'CHILDRENS ATHLETIC',
     ],
     'sub_commodities': [
@@ -276,7 +276,10 @@ commodity_segmentations = {
       'CHILDRENS NIKE', 'CHILDRENS UA', 'CHILDRENS SKECHERS', 'NUT SUPP-CHILDREN',
       'TEENS/CHILDREN - MAGAZINES', 'KIDS MILK DRINKS-ASEPTIC', 'FZ KIDS MEAL',
       'KIDS', 'KIDS FLIP FLOPS', 'KIDS BEDDINGS', 'SUNGLASSES KIDS',
-      'KIDS YOGURT', 'NAT/ORGNC KIDS YOGURT',
+      'KIDS YOGURT', 'NAT/ORGNC KIDS YOGURT', 'KIDS CEREAL',
+      'R/C VEHICLES', 'LEGO', 'MALE ACTION', 'ACTION FIGURES', 'NERF & ACTIVITY',
+      'BABY DOLLS', 'BARBIE DOLLS', 'FASHION DOLLS',
+      'MODELS',
     ],
     'weeks': 52,
     'live': False,
