@@ -379,31 +379,6 @@ def get_files(segmentation_name):
   files.sort()
   return(files)
 
-def add_facebook_pandora_flags(logger, hshd_universe_df, dig_cus_adv_pref_flag_N):
-    logger.info("Adding Facebook and Pandora Flags to Weekly eligible")
-    
-    if "ADV_PREF_FLAG" not in hshd_universe_df.columns:
-        hshd_universe_df = hshd_universe_df.withColumn("ADV_PREF_FLAG", lit("N"))
-    
-    if "KPM_LT_ELIGIBLE_FLAG" not in hshd_universe_df.columns:
-        hshd_universe_df = hshd_universe_df.withColumn("KPM_LT_ELIGIBLE_FLAG", lit("N"))
-    
-    hshd_universe_df = hshd_universe_df.join(
-        dig_cus_adv_pref_flag_N.withColumnRenamed("ADV_PREF_FLAG", "DIG_CUS_ADV_PREF_FLAG"),
-        hshd_universe_df["EHHN"] == dig_cus_adv_pref_flag_N["EHHN"],
-        "left_outer") \
-        .drop(dig_cus_adv_pref_flag_N["EHHN"]) \
-        .withColumn("DIG_CUS_ADV_PREF_FLAG", col("DIG_CUS_ADV_PREF_FLAG")) \
-        .drop(dig_cus_adv_pref_flag_N["ADV_PREF_FLAG"]) \
-        .withColumn("DIG_CUS_ADV_PREF_FLAG", expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'N' THEN DIG_CUS_ADV_PREF_FLAG ELSE 'Y' END")) \
-        .withColumn("FACEBOOK_FLAG", 
-                    expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'Y' AND HAVE_PII_FLAG = 'Y' AND KPM_LT_ELIGIBLE_FLAG = 'N' THEN 'Y' ELSE 'N' END")) \
-        .withColumn("PANDORA_FLAG", 
-                    expr("CASE WHEN DIG_CUS_ADV_PREF_FLAG = 'Y' AND HAVE_PII_FLAG = 'Y' AND KPM_LT_ELIGIBLE_FLAG = 'N' THEN 'Y' ELSE 'N' END"))
-    
-    hshd_universe_df = hshd_universe_df.drop("DIG_CUS_ADV_PREF_FLAG")
-    
-    return hshd_universe_df
 #Class for each segmentation that contains the following 
 #attributes: name, frontend name, segment type, type, propensities,
 #directory, files.
