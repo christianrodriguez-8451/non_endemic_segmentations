@@ -227,4 +227,42 @@ main(
   description="Buyers who prefer to purchase products that contain protein branded descriptions including protein bars, protein powdered supplements, meat snacks, smoked sausages and protein shakes and high protein vegetables.",
   selectedValues=segment.propensities,
   #output_dir="abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress/",
-)
+  )
+
+# COMMAND ----------
+
+brand = "sprite"
+temp = brand.replace("_", " ")
+temp = temp.title()
+segs = [
+  "weekly_single_serve",
+  "weekly_multi_serve",
+  "intenders",
+  "neutrals",
+  "rejectors",
+]
+frontend_names = [
+  temp + " TM Weekly+ Single-Serve",
+  temp + " TM Weekly+ Multi-Serve",
+  temp + " TM Intenders",
+  temp + " TM Neutrals",
+  temp + " TM Rejectors",
+]
+
+for seg, frontend_name in zip(segs, frontend_names):
+  seg = brand + "_" + seg
+
+  main(
+    backend_name=seg,
+    groupName="Food & Beverage",
+    frontend_name=frontend_name,
+    description="PLACEHOLDER DESCRIPTION",
+    selectedValues=["H"],
+  )
+
+# COMMAND ----------
+
+brand = "diet_coke"
+temp = brand.replace("_", " ")
+temp = temp.title()
+temp

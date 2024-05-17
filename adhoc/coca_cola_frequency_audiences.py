@@ -7,6 +7,7 @@ import pyspark.sql.types as t
 import pandas as pd
 import math as m
 from pyspark.sql.window import Window
+import os
 
 #When you use a job to run your notebook, you will need the service principles
 #You only need to define what storage accounts you are using
@@ -25,25 +26,138 @@ spark.conf.set(f"fs.azure.account.oauth2.client.id.{storage_account}.dfs.core.wi
 spark.conf.set(f"fs.azure.account.oauth2.client.secret.{storage_account}.dfs.core.windows.net", service_credential)
 spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.core.windows.net", f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
 
+def write_out(df, fp, delim=",", fmt="csv"):
+  """Writes out PySpark dataframe as a csv file
+  that can be downloaded for Azure and loaded into
+  Excel very easily.
+
+  Example
+  ----------
+    write_out(df, "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/data_analysis.csv")
+
+  Parameters
+  ----------
+  df: pyspark.sql.dataframe.DataFrame
+    PySpark dataframe contains the data we'd like
+    to conduct the group-by count on.
+
+  fp: str
+    String that the defines the column name of the 
+    column of interest.
+
+  delim: str
+    String that specifies which delimiter to use in the
+    write-out. Default value is ','.
+
+  fmt: str
+    String that specifies which format to use in the
+    write-out. Default value is 'csv'.
+
+  Returns
+  ----------
+  None. File is written out specified Azure location.
+  """
+  #Placeholder filepath for intermediate processing
+  temp_target = os.path.dirname(fp) + "/" + "temp"
+
+  #Write out df as partitioned file. Write out ^ delimited
+  df.coalesce(1).write.options(header=True, delimiter=delim).mode("overwrite").format(fmt).save(temp_target)
+
+  #Copy desired file from parititioned directory to desired location
+  temporary_fp = os.path.join(temp_target, dbutils.fs.ls(temp_target)[3][1])
+  dbutils.fs.cp(temporary_fp, fp)
+  dbutils.fs.rm(temp_target, recurse=True)
+
 # COMMAND ----------
 
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/coca_cola_frequency/"
+#########################################################
+###Red Label Coca Cola
+#########################################################
+
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/coca_cola_frequency/"
 
 #1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
 #but have not purchased Coca Cola TM.
-#in_fn = "carbonated_soft_drinks_upcs.csv"
+#in_fn = "carbonated_soft_drinks_upcs2.csv"
 #notin_fn = "coca_cola_tm_upcs.csv"
+
+#max_weeks = 13
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "coca_cola_tm_upcs.csv"
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "coca_cola_tm_upcs.csv"
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+#in_fn = "coca_cola_tm_single_serve_upcs.csv"
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
+
+#output_fn = "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "coca_cola_tm_multi_serve_upcs.csv"
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Diet Coke
+#########################################################
+
+#brand = "diet_coke"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "carbonated_soft_drinks_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
 
 #max_weeks = 52
 #freq_min = 2
 #freq_max = None
 #cycle_length = 30
 
-#output_fn = "rejectors_hhs"
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
 
 #2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
 #but not more than twice, every 90 days.
-#in_fn = "coca_cola_tm_upcs.csv"
+#in_fn = "{}_tm_upcs.csv".format(brand)
 #notin_fn = None
 
 #max_weeks = 52
@@ -51,11 +165,11 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 #freq_max = 2
 #cycle_length = 90
 
-#output_fn = "neutrals_hhs"
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
 
 #3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
 #but not more than 3 times, every 30 days.
-#in_fn = "coca_cola_tm_upcs.csv"
+#in_fn = "{}_tm_upcs.csv".format(brand)
 #notin_fn = None
 
 #max_weeks = 52
@@ -63,11 +177,11 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 #freq_max = 3
 #cycle_length = 30
 
-#output_fn = "intenders_hhs"
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
 
 #4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
 #Coca Cola TM Single-Serve at least once every 7 days.
-#in_fn = "coca_cola_tm_single_serve_upcs.csv"
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
 #notin_fn = None
 
 #max_weeks = 52
@@ -75,19 +189,424 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 #freq_max = None
 #cycle_length = 7
 
-#output_fn = "weekly_single_serve_hhs"
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
 
 #5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
 #Coca Cola TM Multi-Serve at least once every 14 days.
-in_fn = "coca_cola_tm_multi_serve_upcs.csv"
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Coke Zero
+#########################################################
+
+#brand = "coke_zero"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "carbonated_soft_drinks_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
+
+#max_weeks = 52
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Sprite
+#########################################################
+
+#brand = "sprite"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "carbonated_soft_drinks_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
+
+#max_weeks = 52
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Fanta
+#########################################################
+
+#brand = "fanta"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "carbonated_soft_drinks_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
+
+#max_weeks = 13
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Minute Maid
+#########################################################
+
+#brand = "minute_maid"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "carbonated_soft_drinks_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
+
+#max_weeks = 52
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 52
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Simply
+#########################################################
+
+brand = "simply"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "refrigerated_juices_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
+
+#max_weeks = 13
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
 notin_fn = None
 
-max_weeks = 52
+max_weeks = 13
 freq_min = 1
 freq_max = None
-cycle_length = 14
+cycle_length = 7
 
-output_fn = "weekly_multi_serve_hhs"
+output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Smart Water
+#########################################################
+
+#brand = "smart_water"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola TM.
+#in_fn = "nf_water_no_{}_upcs.csv".format(brand)
+#notin_fn = "{}_tm_upcs.csv".format(brand)
+
+#max_weeks = 13
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than twice, every 90 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 2
+##cycle_length = 90
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
+#but not more than 3 times, every 30 days.
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Single-Serve at least once every 7 days.
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+
+#5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
+#Coca Cola TM Multi-Serve at least once every 14 days.
+#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 14
+
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+# COMMAND ----------
+
 
 #Assumed schema for provided UPC lists
 schema = t.StructType([
@@ -135,7 +654,6 @@ pim_fp = config.get_latest_modified_directory(config.azure_pim_core_by_cycle)
 pim = config.spark.read.parquet(pim_fp)
 pim = pim.select(
   f.col("upc").alias("gtin_no"),
-  #f.col("gtin").alias("gtin_no"),
   f.col("gtinName").alias("product_name"),
   f.col("krogerOwnedEcommerceDescription").alias("product_description"),
   f.col("familyTree.commodity.name").alias("commodity"),
@@ -146,6 +664,15 @@ pim = pim.select(
   "commodity", "sub_commodity",
 )
 
+#When we QC against PIM, we see that there are non-soda UPCs
+acceptable_commodities = [
+  "SOFT DRINKS", "SINGLE SERVE BEVERAGE", "SPECIALTY SOFT DRINKS",
+  "REFRGRATD JUICES/DRINKS", "RTD TEA/LEMONADE", "SHELF STABLE JUICE", "FROZEN JUICE",
+]
+acceptable_upcs = pim.filter(f.col("commodity").isin(acceptable_commodities)).select("gtin_no").collect()
+acceptable_upcs = [x["gtin_no"] for x in acceptable_upcs]
+in_upcs = [x for x in in_upcs if x in acceptable_upcs]
+
 #
 temp = pim.filter(f.col("gtin_no").isin(in_upcs))
 message = "\nPIM data for inclusion UPCs:\n"
@@ -154,6 +681,8 @@ temp.show(50, truncate=False)
 del(temp)
 
 if len(notin_upcs) != 0:
+  notin_upcs = [x for x in notin_upcs if x in acceptable_upcs]
+
   temp = pim.filter(f.col("gtin_no").isin(notin_upcs))
   message = "\nPIM data for exclusion UPCs:\n"
   print(message)
@@ -216,6 +745,7 @@ if not (freq_max is None) and (type(freq_max) == int):
   freq = freq.filter(f.col("frequency") <= freq_max)
   print("Applied maximum-per-cycle condition.")
 
+#For every household, get how many cycles they satisfied
 satisfied = freq.groupby("ehhn").agg(f.countDistinct("cycle").alias("cycles_satisfied"))
 #QC: Check how many households met the conditions or were close to meeting the conidtions
 #for each cycle
@@ -223,16 +753,7 @@ counts_df = satisfied.\
   groupBy("cycles_satisfied").\
   count().\
   orderBy("cycles_satisfied", ascending=False)
-
-windowSpec = Window.orderBy(f.desc("cycles_satisfied"))
-counts_df = counts_df.withColumn("row_index", f.row_number().over(windowSpec))
-counts_df = counts_df.filter(f.col("row_index") <= 10)
-counts_df.show(50, truncate=False)
-
-#Apply every-x-days condition: satisfied the frequency conditions every cycle
-satisfied = satisfied.filter(f.col("cycles_satisfied") == num_cycles)
-message = "{} households met the frequency conditions every cycle!".format(satisfied.count())
-print(message)
+counts_df = counts_df.withColumnRenamed("count", "hh_count")
 
 #Apply have-not-purchased condition: satsified the frequency conditions and did not
 #purchase any of the products in the given list
@@ -244,21 +765,177 @@ if not (notin_upcs is None) and (type(notin_upcs) == list) and not (notin_fn is 
     select("ehhn").\
     dropDuplicates()
   have_purch = have_purch.withColumn("did_purchase", f.lit(1))
+
   #Only keep the applicable households that did not buy from the bad list
   satisfied = satisfied.\
     join(have_purch, "ehhn", "left").\
     filter(f.col("did_purchase").isNull()).\
-    select("ehhn")
+    select("ehhn", "cycles_satisfied")
 
-  satisfied.cache()
+  #QC:
+  havenot_counts_df = satisfied.\
+    groupBy("cycles_satisfied").\
+    count().\
+    orderBy("cycles_satisfied", ascending=False)
+  havenot_counts_df = havenot_counts_df.withColumnRenamed("count", "havenot_hh_count")
+  counts_df = counts_df.join(havenot_counts_df, "cycles_satisfied", "left")
+  counts_df = counts_df.orderBy("cycles_satisfied", ascending=False)
 
-  message = "Out of all the applicable households, {} households never bought from the notin list.".format(satisfied.count())
-  print(message)
+#Cache the data
+satisfied.cache()
+counts_df.cache()
+
+message = (
+  "Inputted parameters for {}\n".format(output_fn) +
+  "--------------------\n" +
+  "Max Weeks: {}\n".format(max_weeks) +
+  "Frequency Minimum: {}\n".format(freq_min) +
+  "Frequency Maximum: {}\n".format(freq_max) +
+  "Cycle Length: {}\n".format(cycle_length) +
+  "--------------------\n"
+)
+print(message)
+del(message)
+
+counts_df.show(50, truncate=False)
+
+# COMMAND ----------
+
+#Output cycle counts dataframe
+fp = my_dir + output_fn + "_cycles_count" + ".csv"
+write_out(counts_df, fp)
+del(fp)
+
+#Output raw household dataframe that contains each household and how many cycles they satisfy
+fp = my_dir + "raw_" + output_fn
+satisfied.write.mode("overwrite").format("delta").save(fp)
+del(fp)
+
+#Apply every-x-days condition: satisfied the frequency conditions every cycle
+satisfied = satisfied.filter(f.col("cycles_satisfied") >= int((num_cycles-0)))
+message = "{} households met the frequency conditions every cycle!".format(satisfied.count())
+print(message)
+
+#Output household dataframe that contains each household that satisfies the required number of cycles
+fp = my_dir + output_fn
+satisfied.write.mode("overwrite").format("delta").save(fp)
+del(in_fn, notin_fn, max_weeks, freq_min, freq_max, cycle_length, output_fn, fp)
 
 
 # COMMAND ----------
 
-#Write out the household file
-output_fp = my_dir + output_fn
-satisfied.write.mode("overwrite").format("delta").save(output_fp)
-del(output_fn, output_fp)
+max_weeks = 26
+brand = "sprite"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+my_fns = [
+  brand + "_{}week_".format(max_weeks) + "rejectors_hhs",
+  brand + "_{}week_".format(max_weeks) + "neutrals_hhs",
+  brand + "_{}week_".format(max_weeks) + "intenders_hhs",
+  brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs",
+  brand + "_{}week_".format(max_weeks) + "weekly_multi_serve_hhs",
+]
+
+fp = my_dir + my_fns[0]
+df1 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[1]
+df2 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[2]
+df3 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[3]
+df4 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[4]
+df5 = spark.read.format("delta").load(fp)
+
+df1 = df1.select("ehhn")
+df2 = df2.select("ehhn")
+df3 = df3.select("ehhn")
+df4 = df4.select("ehhn")
+df5 = df5.select("ehhn")
+
+df = df1.union(df2).union(df3).union(df4).union(df5)
+df = df.dropDuplicates()
+df.count()
+
+# COMMAND ----------
+
+#df1.count()
+
+# COMMAND ----------
+
+#df2.count()
+
+# COMMAND ----------
+
+#df3.count()
+
+# COMMAND ----------
+
+#df4.count()
+
+# COMMAND ----------
+
+#df5.count()
+
+# COMMAND ----------
+
+#Diet Coke
+#Rejectors - 1329596
+#Neutrals - 2246481
+#Intenders - 399372
+#Single Serve - 2094
+#Multi Serve - 94344
+#Altogether - 4049402
+
+#Coke Zero
+#Rejectors - 1422015
+#Neutrals - 1947512
+#Intenders - 260291
+#Single Serve - 1306
+#Multi Serve - 42976
+#Altogether - 3663058
+
+#Sprite
+#Rejectors - 1053701
+#Neutrals - 4374678
+#Intenders - 351191
+#Single Serve - 843
+#Multi Serve - 39653
+#Altogether - 5808538
+
+# COMMAND ----------
+
+"""
+import pyspark.sql.functions as f
+import datetime as dt
+
+brand = "sprite"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+segs = [
+  "rejectors",
+  "neutrals",
+  "intenders",
+  "weekly_single_serve",
+  "weekly_multi_serve",
+]
+for seg in segs:
+  my_fn = brand + "_13week_" + seg + "_hhs"
+  fp = my_dir + my_fn
+
+  #Keep only ehhn and segment
+  df = spark.read.format("delta").load(fp)
+  df = df.select("ehhn")
+  df = df.withColumn("segment", f.lit("H"))
+  df.show(10, False)
+
+  count = df.count()
+  seg = brand + "_" + seg
+  print("{} household count: {}".format(seg, count))
+    
+  #Write out to the egress directory and write out in format that engineering expects
+  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+  today = dt.datetime.today().strftime('%Y%m%d')
+  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
+  df.write.mode("overwrite").format("parquet").save(dest_fp)
+  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+"""
