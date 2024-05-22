@@ -475,8 +475,8 @@ def write_out(df, fp, delim=",", fmt="csv"):
 ###Simply
 #########################################################
 
-brand = "simply"
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+#brand = "simply"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 #1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
 #but have not purchased Coca Cola TM.
@@ -516,15 +516,15 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 
 #4) Weekly+ Single-Serve: Over the last 52 weeks, have purchased
 #Coca Cola TM Single-Serve at least once every 7 days.
-in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
-notin_fn = None
+#in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
+#notin_fn = None
 
-max_weeks = 13
-freq_min = 1
-freq_max = None
-cycle_length = 7
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
 
-output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs"
 
 #5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
 #Coca Cola TM Multi-Serve at least once every 14 days.
@@ -542,8 +542,8 @@ output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs
 ###Smart Water
 #########################################################
 
-#brand = "smart_water"
-#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+brand = "smart_water"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 #1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
 #but have not purchased Coca Cola TM.
@@ -565,7 +565,7 @@ output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_single_serve_hhs
 #max_weeks = 13
 #freq_min = 1
 #freq_max = 2
-##cycle_length = 90
+#cycle_length = 90
 
 #output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
 
@@ -668,6 +668,7 @@ pim = pim.select(
 acceptable_commodities = [
   "SOFT DRINKS", "SINGLE SERVE BEVERAGE", "SPECIALTY SOFT DRINKS",
   "REFRGRATD JUICES/DRINKS", "RTD TEA/LEMONADE", "SHELF STABLE JUICE", "FROZEN JUICE",
+  "NF NAT FOODS WATER", "WATER", "SPARKLING WATER",
 ]
 acceptable_upcs = pim.filter(f.col("commodity").isin(acceptable_commodities)).select("gtin_no").collect()
 acceptable_upcs = [x["gtin_no"] for x in acceptable_upcs]
@@ -824,8 +825,8 @@ del(in_fn, notin_fn, max_weeks, freq_min, freq_max, cycle_length, output_fn, fp)
 
 # COMMAND ----------
 
-max_weeks = 26
-brand = "sprite"
+max_weeks = 13
+brand = "minute_maid"
 my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 my_fns = [
   brand + "_{}week_".format(max_weeks) + "rejectors_hhs",
@@ -858,23 +859,23 @@ df.count()
 
 # COMMAND ----------
 
-#df1.count()
+df1.count()
 
 # COMMAND ----------
 
-#df2.count()
+df2.count()
 
 # COMMAND ----------
 
-#df3.count()
+df3.count()
 
 # COMMAND ----------
 
-#df4.count()
+df4.count()
 
 # COMMAND ----------
 
-#df5.count()
+df5.count()
 
 # COMMAND ----------
 
@@ -904,11 +905,44 @@ df.count()
 
 # COMMAND ----------
 
-"""
+#Fanta
+#Rejectors - 1585005
+#Neutrals - 1329302
+#Intenders - 47445
+#Single Serve - 61
+#Multi Serve - 2877
+#Altogether - 2963790
+
+#Minute Maid
+#Rejectors - 2972522
+#Neutrals - 2421885
+#Intenders - 227971
+#Single Serve - 34
+#Multi Serve - 44606
+#Altogether - 5620035
+
+#Simply
+#Rejectors - 339949
+#Neutrals - 4459539
+#Intenders - 477825
+#Single Serve - 163
+#Multi Serve - 85373
+#Altogether - 5338787
+
+#Smart Water
+#Rejectors - 58228
+#Neutrals - 635375
+#Intenders - 21029
+#Single Serve - 143
+#Multi Serve - 4052
+#Altogether - 717952
+
+# COMMAND ----------
+
 import pyspark.sql.functions as f
 import datetime as dt
 
-brand = "sprite"
+brand = "minute_maid"
 my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 segs = [
@@ -938,4 +972,3 @@ for seg in segs:
   dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
   df.write.mode("overwrite").format("parquet").save(dest_fp)
   print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
-"""
