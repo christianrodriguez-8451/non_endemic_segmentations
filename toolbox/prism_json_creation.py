@@ -223,19 +223,11 @@ def main(
 import toolbox.config as con
 seg = "fmb_and_hard_seltzers"
 segment = con.segmentation(seg)
-tags = ["Alcohol"]
-description = "Buyers who have purchased hard seltzers or malt beverages in the past 26 weeks, enjoying their refreshing nature, convenience, and diversity of flavors."
-
 main(
   backend_name=seg,
-  frontend_name=segment.frontend_name,
-  description=description,
+  frontend_name="PLACEHOLDER FOR {}".format(seg),
+  description="PLACEHOLDER FOR {}".format(seg),
   groupName=segment.segment_type,
-  tags = tags,
+  tags = segment.tags,
   selectedValues=segment.propensities,
 )
-print(description)
-
-# COMMAND ----------
-
-segment.propensities
