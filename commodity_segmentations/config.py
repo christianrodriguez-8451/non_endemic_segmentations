@@ -437,13 +437,8 @@ sensitive_segmentations = {
     "weeks": 26
   },
   "whiskey": {
-    "commodities": [],
-    "sub_commodities": [
-      "BLENDED WHISKEY", "BLENDED WHISKEY(42 UNDER PROOF)",
-      "BLENDED WHISKEY(42 UNDER PROOF",
-      "CANADIAN WHISKEY", "CANADIAN WHISKEY(42 UNDER PROOF)",
-      "CANADIAN WHISKEY(42 UNDER PROO"
-    ],
+    "commodities": ["N. AMER WHISKEY"],
+    "sub_commodities": ["IRISH WHISKEY"],
     "weeks": 26
   },
   "liquor": {
