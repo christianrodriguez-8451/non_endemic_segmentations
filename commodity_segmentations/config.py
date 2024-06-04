@@ -534,6 +534,73 @@ sensitive_segmentations = {
     "sub_commodities": ["FMB FLAVORS", "HARD SELTZER/WATER"],
     "weeks": 26
   },
+  "non_alcoholic_beer": {
+    "commodities": ["NON-ALCOHOLIC"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "non_alcoholic_wine": {
+    "commodities": [],
+    "sub_commodities": ["NON ALCOHOLIC"],
+    "weeks": 26
+  },
+  "non_alcoholic_spirits": {
+    "commodities": [],
+    "sub_commodities": ["SPIRIT NON ALCOHOL"],
+    "weeks": 26
+  },
+  "non_alcoholic_beverage": {
+    "commodities": ["NON-ALCOHOLIC"],
+    "sub_commodities": ["NON ALCOHOLIC", "SPIRIT NON ALCOHOL"],
+    "weeks": 26
+  },
+  "hard_cider": {
+    "commodities": ["CIDER"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "ready_to_drink": {
+    "commodities": ["RTD COCKTAILS"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "red_wine": {
+    "commodities": [],
+    "sub_commodities": [
+      "750ML RED VALUE WINES $0-$7.99",
+      "750ML RED PREM WINES $8-14.99",
+      "750ML RED LUXURY WINES ABOVE $",
+      "750ML RED LUXURY WINES ABOVE $15",
+    ],
+    "weeks": 26
+  },
+  "white_wine": {
+    "commodities": [],
+    "sub_commodities": [
+      "750ML WHITE VALUE WINES $0-$7.", "750ML WHITE VALUE WINES $0-$7.99",
+      "750ML WHITE PREM WINES $8-14.9", "750ML WHITE PREM WINES $8-14.99",
+      "750ML WHITE LUXURY WINES ABOVE", "750ML WHITE LUXURY WINES ABOVE $15",
+    ],
+    "weeks": 26
+  },
+  "sparkling_wine": {
+    "commodities": ["SPARKLING WINE"],
+    "sub_commodities": ["SPARKLING WINES"],
+    "weeks": 26
+  },
+  "rose_wine": {
+    "commodities": [],
+    "sub_commodities": [
+      "750ML ROSE/BLUSH VALUE WINES $", "750ML ROSE/BLUSH VALUE WINES $0-$7.99",
+      "750ML ROSE/BLUSH PREM WINES AB", "750ML ROSE/BLUSH PREM WINES ABOVE $8",
+    ],
+    "weeks": 26
+  },
+  "wine": {
+    "commodities": ["TABLE WINE", "MISC WINE", "SPARKLING WINE"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
 }
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
