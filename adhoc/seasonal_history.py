@@ -1,7 +1,6 @@
 # Databricks notebook source
 #Idea: Re-consider how far to look at data for (not just 3 day window)
 #Analyze when trips spike
-
 from pyspark.sql import SparkSession
 from datetime import datetime, timedelta
 import pyspark.sql.functions as f
@@ -87,6 +86,7 @@ holiday_dict = {
   "juneteenth": [20220619, 20230619], #In 2021, not all states adopted as federally paid holiday. In 2022, most do.
   "fathers_day": [20200621, 20210620, 20220619, 20230618], #Not really popular but added in for curiosity
   "july_4th": [20200704, 20210704, 20220704, 20230704],
+  "back_to_school": [20200822, 20210821, 20220813, 20230819],
   "labor_day": [20200907, 20210906, 20220905, 20230904],
   "halloween": [20201031, 20211031, 20221031, 20231031],
   "thanksgiving": [20201126, 20211125, 20221124, 20231123],
@@ -119,16 +119,20 @@ holidays = holidays.join(dates.select("date", "week"),
 holidays = holidays.orderBy("holiday", "date")
 holidays.show(50, truncate=False)
 
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/"
+fn = "holidays"
+fp = my_dir + fn
+holidays.write.mode("overwrite").format("delta").save(fp)
+
 # COMMAND ----------
 
 #Pull in transaction data and keep only ehhn, gtin_no, and dollars_spent
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
-acds = acds.select("gtin_no", "net_spend_amt", f.col("trn_dt").alias("date"))
+acds = acds.select("gtin_no", "net_spend_amt", "scn_unt_qy", f.col("trn_dt").alias("date"))
 #QUESTION: Should I be dropping returns or any other weird cases?
 acds.cache()
 acds.show(truncate=False)
-#Get units sold
 
 # COMMAND ----------
 
@@ -151,10 +155,36 @@ pim = pim.na.drop(subset=["sub_commodity"])
 
 #Sum net_spend_amt by sub-commodity and date to ease computation down the road
 acds = acds.join(pim, "gtin_no", "inner")
-acds = acds.groupby("sub_commodity", "date").agg(f.sum("net_spend_amt").alias("net_spend_amt"))
+acds = acds.\
+  groupby("commodity", "sub_commodity", "date").\
+  agg(f.sum("net_spend_amt").alias("net_spend_amt"),
+      f.sum("scn_unt_qy").alias("scn_unt_qy"))
 acds = acds.join(dates, "date", "inner")
 acds.cache()
 acds.show(50, truncate=False)
+
+# COMMAND ----------
+
+#Create commodity history by calculating dollars spent and dollar share per week.
+comm_hist = acds.\
+  groupby("commodity", "week").\
+  agg(f.sum("net_spend_amt").alias("dollars_spent"),
+      f.sum("scn_unt_qy").alias("units_sold"))
+comm_hist = comm_hist.orderBy(['commodity', 'week'])
+comm_hist.show(50, truncate=False)
+
+#Create sub-commodity history by calculating dollars spent and dollar share per week.
+subcomm_hist = acds.\
+  groupby("commodity", "sub_commodity", "week").\
+  agg(f.sum("net_spend_amt").alias("dollars_spent"),
+      f.sum("scn_unt_qy").alias("units_sold"))
+subcomm_hist = subcomm_hist.orderBy(['commodity', 'sub_commodity', 'week'])
+subcomm_hist.show(50, truncate=False)
+
+fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + "seasonal_commodity_history"
+comm_hist.write.mode("overwrite").format("delta").save(fp)
+fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + "seasonal_subcommodity_history"
+subcomm_hist.write.mode("overwrite").format("delta").save(fp)
 
 # COMMAND ----------
 
