@@ -93,7 +93,7 @@ for seg in segs:
   egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
   today = dt.datetime.today().strftime('%Y%m%d')
   dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
-  #df.write.mode("overwrite").format("parquet").save(dest_fp)
+  df.write.mode("overwrite").format("parquet").save(dest_fp)
   print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
 
   #Keep track of file used in production
