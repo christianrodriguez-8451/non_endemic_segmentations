@@ -657,7 +657,7 @@ def get_type(segmentation_name):
 
   elif segmentation_name in segmentations.sensitive_segmentations:
     segmentation_type = "sensitive"
-
+    
   else:
     message = (
       "{} is not present in any of the lists contained within the 'segmentations' class.".format(segmentation_name) +
