@@ -31,23 +31,47 @@ spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.c
 
 import toolbox.config as con
 import pyspark.sql.functions as f
+import pyspark.sql.types as t
 import datetime as dt
+import os
+
+def write_out(df, fp, delim=",", fmt="csv"):
+  #Placeholder filepath for intermediate processing
+  temp_target = os.path.dirname(fp) + "/" + "temp"
+
+  #Write out df as partitioned file. Write out ^ delimited
+  df.coalesce(1).write.options(header=True, delimiter=delim).mode("overwrite").format(fmt).save(temp_target)
+
+  #Copy desired file from parititioned directory to desired location
+  temporary_fp = os.path.join(temp_target, dbutils.fs.ls(temp_target)[3][1])
+  dbutils.fs.cp(temporary_fp, fp)
+  dbutils.fs.rm(temp_target, recurse=True)
 
 #Get all productionized segmentations
 segs = con.segmentations.all_segmentations
 segs.sort()
 problem_segs = []
+egressed = []
+fps = []
+skipped = []
 for seg in segs:
-  #Get the filepath of the segmentation's latest file
-  #We assume files are sorted (hence we use the last one) and they have a YYYYMMDD timestamp
-  segment = con.segmentation(seg)
-  fn = segment.files[-1]
-  fp = segment.directory + fn
-  print("Read in {} to egress.".format(fp))
+  try:
+    #Get the filepath of the segmentation's latest file
+    #We assume files are sorted (hence we use the last one) and they have a YYYYMMDD timestamp
+    segment = con.segmentation(seg)
+    fn = segment.files[-1]
+    fp = segment.directory + fn
+    print("Read in {} to egress.".format(fp))
 
-  #Keep only ehhn and segment
-  df = spark.read.format("delta").load(fp)
-  df = df.select("ehhn", "segment")
+    #Keep only ehhn and segment
+    df = spark.read.format("delta").load(fp)
+    df = df.select("ehhn", "segment")
+  except:
+    skipped += [seg]
+    #Couldn't read file
+    message = "Read-in failed for {}. Skipping egress.".format(seg)
+    print(message)
+    continue
 
   #Get count of all propensities in the file
   print("{} grouped-by household count:\n".format(seg))
@@ -59,7 +83,7 @@ for seg in segs:
   filtered_count = filtered_df.count()
   print("{} household count: {}".format(seg, filtered_count))
   #If that count is too low, void egressing the file and throw an error at the end
-  threshold = 1500000
+  threshold = 50000
   if filtered_count < threshold:
     problem_segs += [seg]
     print("WARNING - Added {} to problematic segmentations.\n\n".format(seg))
@@ -72,40 +96,39 @@ for seg in segs:
   df.write.mode("overwrite").format("parquet").save(dest_fp)
   print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
 
-#Throw an error for all the segmentations that did not meet the threshold
+  #Keep track of file used in production
+  egressed += [seg]
+  fps += [fp]
+
+#Write out the receipt that contains which was used for the given cycle
+if len(fps) > 0:
+  schema = t.StructType([
+    t.StructField("audience", t.StringType(), True),
+    t.StructField("filepath", t.StringType(), True)
+  ])
+  receipt_df = spark.createDataFrame(list(zip(egressed, fps)), schema=schema)
+  receipt_fp = (
+    "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress_receipts/" +
+   "egress_{}.csv".format(today)
+   )
+  write_out(receipt_df, receipt_fp)
+
+#Spit out error for the voided audiences
+message = ""
+#Throw an error for all the audiences that did not meet the threshold
 if len(problem_segs) > 0:
   problem_segs.sort()
-  message = "There are {} problematic segmentations! Their household counts are far too low below the {} threshold. The problematic segmentations are: {}.".format(len(problem_segs), threshold, ", ".join(problem_segs))
+  addon = "There are {} problematic segmentations! Their household counts are far too low below the {} threshold. The problematic segmentations are: {}.\n".format(len(problem_segs), threshold, ", ".join(problem_segs))
+  message += addon
+
+#Throw an error for all the audiences that could not be read-in
+if len(skipped) > 0:
+  skipped.sort()
+  addon = (
+    "{} audiences were skipped due to read-in errors. ".format(len(skipped)) +
+  "Those audiences are: {}.\n".format(", ".join(skipped))
+  )
+  message += addon
+
+if len(message) > 0:
   raise ValueError(message)
-
-# COMMAND ----------
-
-#Code used to investigate the data issues
-bad_segs = [
-  'free_from_gluten', 'grain_free', 'healthy_eating',
-  'ketogenic', 'kidney-friendly', 'lactose_free',
-  'low_bacteria', 'low_fodmap', 'mediterranean_diet',
-  'paleo', 'vegan', 'vegetarian',
-]
-
-for b in bad_segs:
-  count = 0
-  segment = con.segmentation(b)
-  files = segment.files
-  files.reverse()
-
-  for i in files:
-    fp = segment.directory + i
-    df = spark.read.format("delta").load(fp)
-    df = df.select("ehhn", "segment")
-
-    filtered_df = df.filter(f.col("segment").isin(segment.propensities))
-    filtered_count = filtered_df.count()
-    if filtered_count >= 1750000:
-      print("{}-{} has enough rows!".format(b, i))
-      break
-
-    else:
-      print("{}-{} has {} records...".format(b, i, filtered_count))
-
-  print("{} has no files with enough rows!".format(b))

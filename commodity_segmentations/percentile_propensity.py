@@ -54,6 +54,8 @@ end_date = last_monday - timedelta(days=1)
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
 acds = acds.select("ehhn", "gtin_no", "net_spend_amt")
+#Get rid of return transactions
+acds = acds.filter(f.col("net_spend_amt") > 0)
 
 #Read in each segment's upc list and merge against ACDS
 my_schema = t.StructType([
@@ -105,7 +107,6 @@ for s in segs:
 
   #Write-out
   today = seg_timestamps[s]
-  #today = "20231115"
   df = df.select("ehhn", "segment", "dollars_spent")
   fp = f'{con.output_fp}percentile_segmentations/{s}/{s}_{today}'
   df.write.mode("overwrite").format("delta").save(fp)

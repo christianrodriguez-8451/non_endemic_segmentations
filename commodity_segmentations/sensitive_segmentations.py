@@ -39,6 +39,9 @@ today = date.today()
 last_monday = today - timedelta(days=today.weekday())
 start_date = last_monday - timedelta(weeks=max_weeks)
 end_date = last_monday - timedelta(days=1)
+del(today)
+
+today = date.today().strftime('%Y%m%d')
 
 #Pull in transaction data
 acds = ACDS(use_sample_mart=False)
@@ -118,3 +121,7 @@ for s in list(segments_dict.keys()):
   ehhns = ehhns.withColumn("segment", f.lit("H"))
   fp = f'{con.output_fp}sensitive_segmentations/{s}/{s}_{today}'
   ehhns.write.mode("overwrite").format("delta").save(fp)
+
+# COMMAND ----------
+
+

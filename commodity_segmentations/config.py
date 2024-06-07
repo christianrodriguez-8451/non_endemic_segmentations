@@ -24,7 +24,7 @@ commodity_segmentations = {
   'fitness_enthusiast': {
     'frontend_name': '',
     'commodities': [
-      'ATHLETICS', 'EXERCISE', 'SPORTS NUTRITION',
+      'ATHLETICS', 'EXERCISE', 'NF SPORTS NUTRITION',
       'WOMENS ATHLETIC', 'JR SPORTWEAR TOPS', 'CHILDRENS ATHLETIC',
     ],
     'sub_commodities': [
@@ -276,7 +276,10 @@ commodity_segmentations = {
       'CHILDRENS NIKE', 'CHILDRENS UA', 'CHILDRENS SKECHERS', 'NUT SUPP-CHILDREN',
       'TEENS/CHILDREN - MAGAZINES', 'KIDS MILK DRINKS-ASEPTIC', 'FZ KIDS MEAL',
       'KIDS', 'KIDS FLIP FLOPS', 'KIDS BEDDINGS', 'SUNGLASSES KIDS',
-      'KIDS YOGURT', 'NAT/ORGNC KIDS YOGURT',
+      'KIDS YOGURT', 'NAT/ORGNC KIDS YOGURT', 'KIDS CEREAL',
+      'R/C VEHICLES', 'LEGO', 'MALE ACTION', 'ACTION FIGURES', 'NERF & ACTIVITY',
+      'BABY DOLLS', 'BARBIE DOLLS', 'FASHION DOLLS',
+      'MODELS',
     ],
     'weeks': 52,
     'live': False,
@@ -434,13 +437,8 @@ sensitive_segmentations = {
     "weeks": 26
   },
   "whiskey": {
-    "commodities": [],
-    "sub_commodities": [
-      "BLENDED WHISKEY", "BLENDED WHISKEY(42 UNDER PROOF)",
-      "BLENDED WHISKEY(42 UNDER PROOF",
-      "CANADIAN WHISKEY", "CANADIAN WHISKEY(42 UNDER PROOF)",
-      "CANADIAN WHISKEY(42 UNDER PROO"
-    ],
+    "commodities": ["N. AMER WHISKEY"],
+    "sub_commodities": ["IRISH WHISKEY"],
     "weeks": 26
   },
   "liquor": {
@@ -524,6 +522,78 @@ sensitive_segmentations = {
   "craft_local_beer": {
     "commodities": [],
     "sub_commodities": ["LOCAL/REGIONAL CRAFT"],
+    "weeks": 26
+  },
+  "fmb_and_hard_seltzers": {
+    "commodities": [],
+    "sub_commodities": ["FMB FLAVORS", "HARD SELTZER/WATER"],
+    "weeks": 26
+  },
+  "non_alcoholic_beer": {
+    "commodities": ["NON-ALCOHOLIC"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "non_alcoholic_wine": {
+    "commodities": [],
+    "sub_commodities": ["NON ALCOHOLIC"],
+    "weeks": 26
+  },
+  "non_alcoholic_spirits": {
+    "commodities": [],
+    "sub_commodities": ["SPIRIT NON ALCOHOL"],
+    "weeks": 26
+  },
+  "non_alcoholic_beverage": {
+    "commodities": ["NON-ALCOHOLIC"],
+    "sub_commodities": ["NON ALCOHOLIC", "SPIRIT NON ALCOHOL"],
+    "weeks": 26
+  },
+  "hard_cider": {
+    "commodities": ["CIDER"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "ready_to_drink": {
+    "commodities": ["RTD COCKTAILS"],
+    "sub_commodities": [],
+    "weeks": 26
+  },
+  "red_wine": {
+    "commodities": [],
+    "sub_commodities": [
+      "750ML RED VALUE WINES $0-$7.99",
+      "750ML RED PREM WINES $8-14.99",
+      "750ML RED LUXURY WINES ABOVE $",
+      "750ML RED LUXURY WINES ABOVE $15",
+    ],
+    "weeks": 26
+  },
+  "white_wine": {
+    "commodities": [],
+    "sub_commodities": [
+      "750ML WHITE VALUE WINES $0-$7.", "750ML WHITE VALUE WINES $0-$7.99",
+      "750ML WHITE PREM WINES $8-14.9", "750ML WHITE PREM WINES $8-14.99",
+      "750ML WHITE LUXURY WINES ABOVE", "750ML WHITE LUXURY WINES ABOVE $15",
+    ],
+    "weeks": 26
+  },
+  "sparkling_wine": {
+    "commodities": ["SPARKLING WINE"],
+    "sub_commodities": ["SPARKLING WINES"],
+    "weeks": 26
+  },
+  "rose_wine": {
+    "commodities": [],
+    "sub_commodities": [
+      "750ML ROSE/BLUSH VALUE WINES $", "750ML ROSE/BLUSH VALUE WINES $0-$7.99",
+      "750ML ROSE/BLUSH PREM WINES AB", "750ML ROSE/BLUSH PREM WINES ABOVE $8",
+    ],
+    "weeks": 26
+  },
+  "wine": {
+    "commodities": ["TABLE WINE", "MISC WINE", "SPARKLING WINE"],
+    "sub_commodities": [],
     "weeks": 26
   },
 }
