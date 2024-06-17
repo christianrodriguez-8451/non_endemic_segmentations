@@ -559,15 +559,15 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 
 #2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
 #but not more than twice, every 90 days.
-#in_fn = "{}_tm_upcs.csv".format(brand)
-#notin_fn = None
+in_fn = "{}_tm_upcs.csv".format(brand)
+notin_fn = None
 
-#max_weeks = 13
-#freq_min = 1
-#freq_max = 2
-#cycle_length = 90
+max_weeks = 13
+freq_min = 1
+freq_max = 2
+cycle_length = 90
 
-#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
 
 #3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
 #but not more than 3 times, every 30 days.
@@ -668,7 +668,7 @@ pim = pim.select(
 acceptable_commodities = [
   "SOFT DRINKS", "SINGLE SERVE BEVERAGE", "SPECIALTY SOFT DRINKS",
   "REFRGRATD JUICES/DRINKS", "RTD TEA/LEMONADE", "SHELF STABLE JUICE", "FROZEN JUICE",
-  "NF NAT FOODS WATER", "WATER", "SPARKLING WATER",
+  "NF NAT FOODS WATER", "WATER", "SPARKLING WATER", "WATER",
 ]
 acceptable_upcs = pim.filter(f.col("commodity").isin(acceptable_commodities)).select("gtin_no").collect()
 acceptable_upcs = [x["gtin_no"] for x in acceptable_upcs]
@@ -709,14 +709,16 @@ withColumn('day', f.substring('trn_dt', 7, 2))
 acds = acds.withColumn('date', f.concat(f.col('month'), f.lit("-"), f.col("day"), f.lit("-"), f.col("year")))
 acds = acds.select(
   "ehhn", "transaction_code", "gtin_no",
-  "trn_dt", f.to_date(f.col("date"), "MM-dd-yyyy").alias("transaction_date")
+  "trn_dt", f.to_date(f.col("date"), "MM-dd-yyyy").alias("transaction_date"),
+  "net_spend_amt",
 )
 acds = acds.withColumn("end_date", f.lit(end_date))
 acds = acds.select("ehhn", "gtin_no", "transaction_code", "trn_dt", "transaction_date", "end_date",
-                   f.datediff(f.col("end_date"), f.col("transaction_date")).alias("day"))
+                   f.datediff(f.col("end_date"), f.col("transaction_date")).alias("day"),
+                   "net_spend_amt")
 acds = acds.withColumn("week", f.col("day")/7)
 acds = acds.withColumn("week", f.ceil(f.col("week")))
-acds = acds.select("ehhn", "transaction_code", "gtin_no", "day", "week")
+acds = acds.select("ehhn", "transaction_code", "gtin_no", "day", "week", "net_spend_amt")
 
 #Merge w/ given UPC list to shorten query later.
 acds = acds.filter(f.col("gtin_no").isin(in_upcs + notin_upcs))
@@ -802,6 +804,65 @@ counts_df.show(50, truncate=False)
 
 # COMMAND ----------
 
+#Define the date range for the ACDS pull 
+today = dt.date.today()
+last_monday = today - dr.datetime.timedelta(days=today.weekday())
+start_date = last_monday - dr.datetime.timedelta(weeks=max_weeks)
+end_date = last_monday - dr.datetime.timedelta(days=1)
+#Pull in ACDS
+acds = ACDS(use_sample_mart=False)
+acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
+acds = acds.select("ehhn", "gtin_no", "net_spend_amt")
+
+water_cat_bool = True
+top50 = False
+
+water_fn = "water_category.csv"
+#Assumed schema for provided UPC lists
+schema = t.StructType([
+    t.StructField("Scan Upc", t.StringType(), True),
+    t.StructField("Subcommodity Desc", t.StringType(), True),
+    t.StructField("Commodity Desc", t.StringType(), True)
+])
+#Water category used for calculating water spenders
+water_fp = my_dir + water_fn
+water_upcs = spark.read.csv(water_fp, schema=schema)
+water_upcs = water_upcs.select("Scan UPC").collect()
+water_upcs = [x["Scan UPC"] for x in water_upcs]
+
+#filter(f.col("gtin_no").isin(water_upcs)).\
+if water_cat_bool:
+  #Filter on water category UPCs and calculate household spending
+  water_spenders = acds.\
+  filter(f.col("net_spend_amt") > 0).\
+  filter(f.col("gtin_no").isin(water_upcs)).\
+  groupby("ehhn").\
+  agg(f.min("net_spend_amt").alias("dollars_spent"))
+
+  #Calculate 50 percentile cut-off
+  cutoff50 = water_spenders.approxQuantile("dollars_spent", [0.50], 0.0001)
+  cutoff50 = cutoff50[0]
+
+  #Heavy - keep top 50 of water spenders
+  if top50:
+    water_spenders = water_spenders.filter(f.col("dollars_spent") >= cutoff50)
+    output_fn = brand + "_" + "{}week_".format(max_weeks) + "heavy_" +  "neutrals_hhs"
+    message = "Applied heavy spending conditions."
+  else:
+  #Light - keep bottom 50 of water spenders
+    water_spenders = water_spenders.filter(f.col("dollars_spent") < cutoff50)
+    output_fn = brand + "_" + "{}week_".format(max_weeks) + "light_" + "neutrals_hhs"
+    message = "Applied light spending conditions."
+  
+  #Apply the condition to household by cycles satisfied
+  water_spenders = water_spenders.select("ehhn")
+  satisfied = satisfied.join(water_spenders, "ehhn", "inner")
+
+  print(message)
+
+
+# COMMAND ----------
+
 #Output cycle counts dataframe
 fp = my_dir + output_fn + "_cycles_count" + ".csv"
 write_out(counts_df, fp)
@@ -825,15 +886,21 @@ del(in_fn, notin_fn, max_weeks, freq_min, freq_max, cycle_length, output_fn, fp)
 
 # COMMAND ----------
 
+satisfied.count()
+
+# COMMAND ----------
+
 max_weeks = 13
-brand = "minute_maid"
+brand = "smart_water"
 my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 my_fns = [
   brand + "_{}week_".format(max_weeks) + "rejectors_hhs",
   brand + "_{}week_".format(max_weeks) + "neutrals_hhs",
   brand + "_{}week_".format(max_weeks) + "intenders_hhs",
-  brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs",
-  brand + "_{}week_".format(max_weeks) + "weekly_multi_serve_hhs",
+  #brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs",
+  #brand + "_{}week_".format(max_weeks) + "weekly_multi_serve_hhs",
+  brand + "_{}week_".format(max_weeks) + "heavy_" + "neutrals_hhs",
+  brand + "_{}week_".format(max_weeks) + "light_" + "neutrals_hhs",
 ]
 
 fp = my_dir + my_fns[0]
@@ -846,6 +913,11 @@ fp = my_dir + my_fns[3]
 df4 = spark.read.format("delta").load(fp)
 fp = my_dir + my_fns[4]
 df5 = spark.read.format("delta").load(fp)
+
+add_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+add_fp = my_dir + add_fn
+add_df = spark.read.format("delta").load(add_fp)
+df3 = df3.union(add_df)
 
 df1 = df1.select("ehhn")
 df2 = df2.select("ehhn")
@@ -952,6 +1024,34 @@ segs = [
   "weekly_single_serve",
   "weekly_multi_serve",
 ]
+for seg in segs:
+  my_fn = brand + "_13week_" + seg + "_hhs"
+  fp = my_dir + my_fn
+
+  #Keep only ehhn and segment
+  df = spark.read.format("delta").load(fp)
+  df = df.select("ehhn")
+  df = df.withColumn("segment", f.lit("H"))
+  df.show(10, False)
+
+  count = df.count()
+  seg = brand + "_" + seg
+  print("{} household count: {}".format(seg, count))
+    
+  #Write out to the egress directory and write out in format that engineering expects
+  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+  today = dt.datetime.today().strftime('%Y%m%d')
+  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
+  df.write.mode("overwrite").format("parquet").save(dest_fp)
+  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+# COMMAND ----------
+
+import pyspark.sql.functions as f
+import datetime as dt
+
+dfs = []
+output_fns = []
 for seg in segs:
   my_fn = brand + "_13week_" + seg + "_hhs"
   fp = my_dir + my_fn
