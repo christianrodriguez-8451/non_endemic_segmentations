@@ -98,3 +98,7 @@ upc_df.show(10, truncate=False)
 
 #Tags used on the Pre-Built Audience UI
 segment.tags
+
+# COMMAND ----------
+
+
