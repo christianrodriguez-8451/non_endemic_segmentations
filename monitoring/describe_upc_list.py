@@ -35,7 +35,8 @@ from typing import Union
 import pyspark.sql.types as t
 
 
-acds = ACDS()
+acds = ACDS(use_sample_mart=False)
+
 
 # COMMAND ----------
 
@@ -394,7 +395,7 @@ def write_out(df, fp, delim=",", fmt="csv"):
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ###ACDS Comparsion
+# MAGIC ###ACDS Comparison
 # MAGIC
 
 # COMMAND ----------
@@ -427,6 +428,7 @@ my_schema_elig = t.StructType([
     t.StructField("segmentation", t.StringType(), True),
 ])
 upc_file = spark.createDataFrame([], schema=my_schema_elig)
+segme_list = {}  
 
 for i in segmentation_names:
   try:
@@ -439,9 +441,16 @@ for i in segmentation_names:
       df = spark.read.format("delta").load(seg_fp)
       with_seg = df.withColumn("segmentation", f.lit(i))
       upc_file = upc_file.union(with_seg)
+
   except Exception as e:
+    segme_list[i] = str(e)
     print(e)
 
+
+
+# COMMAND ----------
+
+segme_list    #Missing segments with error
 
 # COMMAND ----------
 
