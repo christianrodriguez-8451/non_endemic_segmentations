@@ -485,7 +485,8 @@ display(spark.read.parquet("abfss://media@sa8451dbxadhocprd.dfs.core.windows.net
 # MAGIC %md
 # MAGIC ### outcome:-
 # MAGIC - some of the segment went missing from acds perhaps their UPC file maybe not available approx 70%
-# MAGIC - A huge differences found between the number of count of each household for ACDS and non-endemic.
+# MAGIC - _A huge differences found between the number of count of each household for ACDS and non-endemic._  
+# MAGIC   This one if fixed
 # MAGIC - The 'difference' column indicates the difference between the two.
 
 # COMMAND ----------
