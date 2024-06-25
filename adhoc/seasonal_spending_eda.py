@@ -149,10 +149,27 @@ def kde_plot_by_group(vis, df, num_col, group_col, x_limit):
   vis.set_ylabel('Density')
   vis.legend()
 
+def table(df, index, fig):
+  temp = df.toPandas()
+  c_labels = list(temp.columns)
+  temp = temp.to_numpy()
+  r_labels = list(range(0, len(temp)))
+
+  vis = fig.add_subplot(gs[index, :])
+  vis.xaxis.set_visible(False)
+  vis.yaxis.set_visible(False)
+  vis.set_frame_on(False)
+  
+  table = vis.table(cellText=temp, colLabels=c_labels, rowLabels=r_labels)
+  table.auto_set_font_size(True)
+  #table.auto_set_font_size(False)
+  #table.set_fontsize(10)
+  table.scale(1.2, 1.2)
+
 # COMMAND ----------
 
 #Read in datasets by holiday
-audience = "fathers_day"
+audience = "july_4th"
 output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + audience + "/"
 
 dept_fp = output_dir + "{}_department_spending".format(audience)
@@ -167,6 +184,67 @@ ehhn_fp = output_dir + "{}_ehhn_spending".format(audience)
 ehhn_df = spark.read.format("delta").load(ehhn_fp)
 ehhn_df.cache()
 
+#ehhn_df = ehhn_df.limit(1000)
+#ehhn_df.cache()
+#dept_df = dept_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
+#dept_df.cache()
+#daily_df = daily_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
+#daily_df.cache()
+
+# COMMAND ----------
+
+fp = (
+  "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" +
+  "seasonal_commodities_control.csv"
+)
+schema = t.StructType([
+    t.StructField("holiday", t.StringType(), True),
+    t.StructField("commodity", t.StringType(), True),
+    t.StructField("sub_commodity", t.StringType(), True),
+    t.StructField("seasonality_score", t.IntegerType(), True)
+])
+holiday_comms = spark.read.csv(fp, schema=schema, header=True)
+holiday_comms = holiday_comms.filter(f.col("holiday") == audience)
+
+#Separate commodity level choices from sub-commodities level choices
+h_comms = holiday_comms.\
+  filter(f.col("sub_commodity") == "ALL SUB-COMMODITIES").\
+  select("commodity", "seasonality_score")
+h_comms.cache()
+
+h_scomms = holiday_comms.\
+  filter(f.col("sub_commodity") != "ALL SUB-COMMODITIES").\
+  select("commodity", "sub_commodity", "seasonality_score")
+h_scomms = h_scomms.withColumnRenamed("seasonality_score", "seasonality_sub_score")
+h_scomms.cache()
+
+#Read in PIM and keep commodity,
+#sub-commodity, department, and sub-department.
+pim_fp = config.get_latest_modified_directory(config.azure_pim_core_by_cycle)
+pim = config.spark.read.parquet(pim_fp)
+pim = pim.select(
+  f.col("familyTree.commodity.name").alias("commodity"),
+  f.col("familyTree.subCommodity.name").alias("sub_commodity"),
+  f.col("familyTree.primaryDepartment.name").alias("department"),
+)
+#For assigning each gtin_no their commodity and sub-commodity
+pim = pim.select("commodity", "sub_commodity", "department")
+pim = pim.dropDuplicates(["commodity", "sub_commodity"])
+pim.cache()
+
+temp = pim.select(["commodity", "department"]).dropDuplicates()
+h_comms = h_comms.join(temp, "commodity", "left")
+h_comms = h_comms.orderBy(["department", "commodity"])
+h_comms = h_comms.select("department", "commodity", "seasonality_score")
+del(temp)
+
+h_scomms = h_scomms.join(pim, ["commodity", "sub_commodity"], "left")
+h_scomms = h_scomms.orderBy(["department", "commodity", "sub_commodity"])
+h_scomms = h_scomms.select("department", "commodity", "sub_commodity", "seasonality_sub_score")
+
+h_comms.show(10, truncate=False)
+h_scomms.show(10, truncate=False)
+
 # COMMAND ----------
 
 from matplotlib.gridspec import GridSpec
@@ -180,6 +258,11 @@ departments = [x["department"] for x in departments]
 departments = list(set(departments))
 n_depts = len(departments)
 n_rows = (4 + 1 + n_depts)
+if h_comms.count() > 0:
+  n_rows += 1
+
+if h_scomms.count() > 0:
+  n_rows += 1
 
 #Define the grid we will be laying our visuals on
 fig = plt.figure(figsize=(10, 30))
@@ -236,6 +319,16 @@ kde_plot_by_group(vis=vis6, df=ehhn_df, num_col="weighted_dollars_spent", group_
 #Visualize spending-across-time at overall and department levels
 seasonal_plots(daily_df=daily_df, dept_df=dept_df, fig=fig, gs=gs, starting_index=4)
 
+if (h_comms.count() > 0) & (h_scomms.count() == 0):
+  table(h_comms, index=n_rows-1, fig=fig)
+
+elif (h_comms.count() == 0) & (h_scomms.count() > 0):
+  table(h_scomms, index=n_rows-1, fig=fig)
+
+elif (h_comms.count() > 0) & (h_scomms.count() > 0):
+  table(h_comms, index=n_rows-2, fig=fig)
+  table(h_scomms, index=n_rows-1, fig=fig)
+
 #Show grid visual
 plt.tight_layout()
 output_fig = plt.gcf()
@@ -249,5 +342,3 @@ abfs_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factor
 
 output_fig.savefig(dbfs_dir1 + fn, format="pdf", bbox_inches="tight")
 dbutils.fs.cp(dbfs_dir2 + fn, abfs_dir + fn)
-
-#Add tables that list commodities/sub-commodities for each department
