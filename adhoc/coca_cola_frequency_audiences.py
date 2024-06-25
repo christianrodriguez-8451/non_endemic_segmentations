@@ -1072,3 +1072,65 @@ for seg in segs:
   dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
   df.write.mode("overwrite").format("parquet").save(dest_fp)
   print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+# COMMAND ----------
+
+max_weeks = 13
+brand = "smart_water"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+my_fns = [
+  brand + "_{}week_".format(max_weeks) + "rejectors_hhs",
+  brand + "_{}week_".format(max_weeks) + "neutrals_hhs",
+  brand + "_{}week_".format(max_weeks) + "intenders_hhs",
+  brand + "_{}week_".format(max_weeks) + "heavy_" + "neutrals_hhs",
+  brand + "_{}week_".format(max_weeks) + "light_" + "neutrals_hhs",
+]
+
+fp = my_dir + my_fns[0]
+df1 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[1]
+df2 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[2]
+df3 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[3]
+df4 = spark.read.format("delta").load(fp)
+fp = my_dir + my_fns[4]
+df5 = spark.read.format("delta").load(fp)
+
+add_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+add_fp = my_dir + add_fn
+add_df = spark.read.format("delta").load(add_fp)
+df3 = df3.union(add_df)
+
+df1 = df1.select("ehhn")
+df2 = df2.select("ehhn")
+df3 = df3.select("ehhn")
+df4 = df4.select("ehhn")
+df5 = df5.select("ehhn")
+
+output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/"
+
+dest_fp = output_dir + my_fns[0]
+df1.coalesce(1).write.mode('overwrite').parquet(dest_fp)
+#df1.write.mode("overwrite").format("parquet").save(dest_fp)
+print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+dest_fp = output_dir + my_fns[1]
+df2.coalesce(1).write.mode('overwrite').parquet(dest_fp)
+#df2.write.mode("overwrite").format("parquet").save(dest_fp)
+print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+dest_fp = output_dir + my_fns[2]
+df3.coalesce(1).write.mode('overwrite').parquet(dest_fp)
+#df3.write.mode("overwrite").format("parquet").save(dest_fp)
+print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+dest_fp = output_dir + my_fns[3]
+df4.coalesce(1).write.mode('overwrite').parquet(dest_fp)
+#df4.write.mode("overwrite").format("parquet").save(dest_fp)
+print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+dest_fp = output_dir + my_fns[4]
+df5.coalesce(1).write.mode('overwrite').parquet(dest_fp)
+#df5.write.mode("overwrite").format("parquet").save(dest_fp)
+print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
