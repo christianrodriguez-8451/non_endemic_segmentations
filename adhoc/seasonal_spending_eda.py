@@ -342,3 +342,6 @@ abfs_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factor
 
 output_fig.savefig(dbfs_dir1 + fn, format="pdf", bbox_inches="tight")
 dbutils.fs.cp(dbfs_dir2 + fn, abfs_dir + fn)
+
+message = abfs_dir + fn + " successfully written out!"
+print(message)
