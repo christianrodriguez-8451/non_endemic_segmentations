@@ -909,6 +909,7 @@ def get_upc_files(segmentation_name):
         files += [d + segmentation_name + "/"]
 
     files.sort()
+    
   elif (upc_type == "commodities_subcommodities") or (upc_type == "regex"):
     files = dbutils.fs.ls(upc_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]

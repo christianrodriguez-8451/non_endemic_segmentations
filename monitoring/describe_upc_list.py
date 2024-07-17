@@ -25,6 +25,21 @@ To do:
 
 # COMMAND ----------
 
+import subprocess
+from functools import reduce
+from effodata import ACDS, golden_rules, Joiner, Sifter, Equality, join_on   #golden rules for ACDS
+from kpi_metrics import KPI, AliasMetric, CustomMetric, AliasGroupby
+from IPython.display import FileLink 
+import sys
+from typing import Union
+import pyspark.sql.types as t
+
+
+acds = ACDS(use_sample_mart=False)
+
+
+# COMMAND ----------
+
 from PIL import Image
 import requests
 import io
@@ -168,8 +183,13 @@ def draw_nonempty_upcs(df, n=25, upc_colname = 'gtin_no'):
   #We tried re-drawing, but could only get so many images
   elif len(good_upcs) > 0 and len(good_upcs) < n:
     print("Only {} UPCs had an image at www.kroger.com.")
+  
+  upc_with_url = []
+  for i in good_upcs:
+    upc = url_fmt.format(i)
+    upc_with_url.append(upc)
 
-  return(good_upcs)
+  return(good_upcs, upc_with_url)
 
 def display_upcs(upcs):
   """Returns an image from https://www.kroger.com/product/images/medium/front/
@@ -371,6 +391,27 @@ def write_out(df, fp, delim=",", fmt="csv"):
   dbutils.fs.cp(temporary_fp, fp)
   dbutils.fs.rm(temp_target, recurse=True)
 
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###ACDS Comparison
+# MAGIC
+
+# COMMAND ----------
+
+#Getting ACDS transaction groupping them based on gtin or UPC's
+
+transaction = acds.get_transactions(start_date='20230101', end_date='20240530')
+transaction_acds = (transaction.groupBy('gtin_no')
+                      .agg(f.count('transaction_code').alias('Total Redemptions'),
+                          f.countDistinct('ehhn').alias("Total Distinct Redemeers aka EHHN"))
+                      .sort('Total Redemptions', ascending=False)
+                      .withColumnRenamed("gtin_no", "gtin"))
+
+# COMMAND ----------
+
+import toolbox.config as seg_con
+segmentation_names = seg_con.segmentations.all_segmentations
 
 # COMMAND ----------
 
@@ -379,21 +420,80 @@ def write_out(df, fp, delim=",", fmt="csv"):
 #read in upc lists as a PySpark dataframe with gtin_no
 #as the column for the UPCs, then the rest of the code should
 #work fine.
-s = "fitness_enthusiast"
-seg_dir = f"{con.output_fp}upc_lists/{s}/"
-dir_contents = dbutils.fs.ls(seg_dir)
-dir_contents = [x[0] for x in dir_contents if s in x[1]]
-dir_contents.sort()
-seg_fp = dir_contents[-1]
-df = spark.read.format("delta").load(seg_fp)
 
-df = df.select("gtin_no")
-#df.show(50, truncate=False)
-df.count()
+#creating a loop for each segment lookup file for UPC's with their name
+my_schema_elig = t.StructType([
+    t.StructField("gtin", t.StringType(), True),
+    t.StructField("segmentation", t.StringType(), True),
+])
+upc_file = spark.createDataFrame([], schema=my_schema_elig)
+segme_list = {}  
+
+for i in segmentation_names:
+  try:
+      s = i
+      seg_dir = f"{con.output_fp}upc_lists/{s}/"
+      dir_contents = dbutils.fs.ls(seg_dir)
+      dir_contents = [x[0] for x in dir_contents if s in x[1]]
+      dir_contents.sort()
+      seg_fp = dir_contents[-1]
+      df = spark.read.format("delta").load(seg_fp)
+      with_seg = df.withColumn("segmentation", f.lit(i))
+      upc_file = upc_file.union(with_seg)
+
+  except Exception as e:
+    segme_list[i] = str(e)
+    print(e)
 
 # COMMAND ----------
 
-n = 25
+segme_list    #Missing segments with error
+
+# COMMAND ----------
+
+#joining our UPC dicrecctory with acds 
+joined_df = upc_file.join(transaction_acds, on="gtin", how='left')
+
+
+# COMMAND ----------
+
+#some minor changes
+upc_acds_seg = (joined_df.groupBy('segmentation')
+                  .agg(f.sum('Total Redemptions').alias("total redemptions made"),
+                  f.sum('Total Distinct Redemeers aka EHHN').alias('distinct Ehhn')))
+
+upc_acds_seg.display()
+
+# COMMAND ----------
+
+#using the recent file which we have created previously for latest period and joining the ACDS with outlying comparsion of difference 
+
+
+display(spark.read.parquet("abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/powerbi_inputs/household_counts/")
+        .filter(f.col('PERIOD').isin('20240605'))
+        .select('SEGMENTATION', 'PERIOD', 'TOTAL_HH')
+        .join(upc_acds_seg, on='segmentation', how='left')
+        .withColumn('Difference', f.col('TOTAL_HH') - f.col('distinct Ehhn'))
+        .select('PERIOD', 'SEGMENTATION', (f.col('TOTAL REDEMPTIONS MADE').alias('REDEMPTIONS IN ACDS')), (f.col('TOTAL_HH').alias('EHHN NON-END')), (f.col('DISTINCT EHHN').alias('EHHN ACDS')), 'DIFFERENCE')
+)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### outcome:-
+# MAGIC - some of the segment went missing from acds perhaps their UPC file maybe not available approx 70%
+# MAGIC - _A huge differences found between the number of count of each household for ACDS and non-endemic._  
+# MAGIC   This one if fixed
+# MAGIC - The 'difference' column indicates the difference between the two.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ####NOTE - The Analysis From ACDS to Non-Endemic end here. 
+
+# COMMAND ----------
+
+n = 10
 image_upcs = draw_nonempty_upcs(df, n)
 display_upcs(image_upcs)
 
