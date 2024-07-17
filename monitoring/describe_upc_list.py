@@ -391,7 +391,6 @@ def write_out(df, fp, delim=",", fmt="csv"):
   dbutils.fs.cp(temporary_fp, fp)
   dbutils.fs.rm(temp_target, recurse=True)
 
-
 # COMMAND ----------
 
 # MAGIC %md
@@ -445,8 +444,6 @@ for i in segmentation_names:
   except Exception as e:
     segme_list[i] = str(e)
     print(e)
-
-
 
 # COMMAND ----------
 

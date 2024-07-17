@@ -21,6 +21,10 @@ con.segmentations.funlo_segmentations
 
 # COMMAND ----------
 
+con.segmentations.regex_segmentations
+
+# COMMAND ----------
+
 #Easy way to get all segmentations live
 con.segmentations.all_segmentations
 
@@ -29,7 +33,7 @@ con.segmentations.all_segmentations
 #Segmentation class has metadata on each segmentaion
 #data includes: name, frontend name, segment type, type, propensities,
 #directory, and files
-segment = con.segmentation("vegetarian")
+segment = con.segmentation("stout")
 segment.name
 
 # COMMAND ----------
@@ -82,7 +86,7 @@ segment.upc_files
 #Using the class' attributes to read in the latest UPC file
 
 #Create the segment class for vegetarian
-segment = con.segmentation("back-to-school")
+segment = con.segmentation("stout")
 #Directory where upc lists are stored
 upc_dir = segment.upc_directory
 #Pull the filename for the latest UPC list. For audiences that are UPC based, most of their

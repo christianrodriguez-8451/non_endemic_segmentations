@@ -254,10 +254,12 @@ print(f"Count of households found purchasing fuel while on a significant trip: {
 # COMMAND ----------
 
 from commodity_segmentations.config import output_fp as fuel_fp
+from toolbox.config import segmentation
 
 #Roadie condition 2 - in top 90th percentile of fuel purchases
 #Read in segmentation file for all-inclusive fuel segmentation
-fuel_fp = fuel_fp + "fuel_segmentations/gasoline/gasoline_20231110"
+fuel_audience = segmentation("gasoline")
+fuel_fp = fuel_audience.directory + fuel_audience.files[-1]
 fuel = spark.read.format("delta").load(fuel_fp)
 
 #Keep only households in top 90th percentile of fuel purchases
@@ -265,7 +267,8 @@ cut_off = fuel.approxQuantile("gallons", [0.90], 0.01)
 cut_off = cut_off[0]
 roadies2 = fuel.filter(fuel["gallons"] >= cut_off)
 roadies2 = roadies2.select("ehhn").dropDuplicates()
-
+print(f"Gasoline audience used: {fuel_fp}")
+fuel.show(5, truncate=False)
 print(f"90th percentile cut-off for household fuel gallon purchases: {cut_off}")
 print(f"Count of households in top 90th percentile of all fuel gallon purchases: {roadies2.count()}")
 
@@ -289,7 +292,12 @@ travelers = travelers.withColumn(
   f.when(f.col("unique_significant_trips") >= 2, "H").otherwise("M")
 )
 travelers = travelers.select("ehhn", "segment")
-#travelers.show(5, truncate=False)
+#Get a count of households by segment
+travelers.\
+groupBy("segment").\
+agg(f.countDistinct("ehhn").alias("household_count")).\
+show(5, truncate=False)
+
 output_fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/travelers/travelers_{today}"
 travelers.write.mode("overwrite").format("delta").save(output_fp)
 
@@ -303,8 +311,13 @@ roadies = roadies.union(roadies2.select("ehhn"))
 roadies = roadies.dropDuplicates()
 roadies = roadies.join(super_roadies, on="ehhn", how="left_outer")
 roadies = roadies.withColumn("segment", f.lit("M"))
-
 roadies = super_roadies.union(roadies)
-#roadies.show(5, truncate=False)
+
+#Get a count of households by segment
+roadies.\
+groupBy("segment").\
+agg(f.countDistinct("ehhn").alias("household_count")).\
+show(5, truncate=False)
+
 output_fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/geospatial/roadies/roadies_{today}"
 roadies.write.mode("overwrite").format("delta").save(output_fp)
