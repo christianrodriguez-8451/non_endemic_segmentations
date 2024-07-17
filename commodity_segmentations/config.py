@@ -598,6 +598,124 @@ sensitive_segmentations = {
   },
 }
 
+regex_segmentations = {
+  #Hard bevs
+  "hard_lemonade": {
+    "filter": {"micro_department": ["BEER", "SPIRITS"]},
+    "must_contain": [["lemonade"]],
+  },
+  "hard_iced_tea": {
+    "filter": {"sub_department": ["LIQUOR"]},
+    "must_contain": [[" tea"]],
+  },
+  #Wine
+  "prosecco": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["prosecco"]],
+  },
+  "champagne": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["champagne"]],
+  },
+  "wine_spritzer": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["spritzer"]],
+  },
+  #Ales
+  "ale": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [[" ale"]],
+    "composes": "ale",
+  },
+  "stout": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["stout"]],
+    "composes": "ale",
+  },
+  "porter": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["porter"]],
+    "composes": "ale",
+  },
+  "ipa": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["ipa", "indian pale", "india pale"]],
+    "composes": "ale",
+  },
+  "hazy": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["hazy", "new england ipa", "new england indian pale ale", "new england india pale ale"]],
+    "composes": "ale",
+  },
+  "wheat_beer": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["wheat"], ["beer", " ale"]],
+    "composes": "ale",
+  },
+  "pale_ale": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["pale"], [" ale"]],
+    "must_not_contain": [["ipa", "indian", "india"]],
+    "composes": "ale",
+  },
+  "amber_ale": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["amber"], [" ale"]],
+    "composes": "ale",
+  },
+  "irish_ale": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["irish"], [" ale"]],
+    "composes": "ale",
+  },
+  "blonde_ale": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["blonde", "blond"], [" ale"]],
+    "composes": "ale",
+  },
+  #Lagers
+  "lager": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["lager"]],
+    "composes": "lager",
+  },
+  "pale_lager": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["pale"], ["lager"]],
+    "composes": "lager",
+  },
+  "light_lager": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["light", "lite"], ["lager"]],
+    "composes": "lager",
+  },
+  "amber_lager": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["amber"], ["lager"]],
+    "composes": "lager",
+  },
+  "pilsner": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["pilsner"]],
+    "composes": "lager",
+  },
+  "oktoberfest": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["okto"]],
+    "composes": "lager",
+  },
+  "bock": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["bock"]],
+    "composes": "lager",
+  },
+  "dunkel": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["dunkel"]],
+    "composes": "lager",
+  },
+}
+
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
 percentile_segmentations = [
   "fitness_enthusiast", "beautists", "beverage_enchancers", "back-to-school",
