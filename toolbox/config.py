@@ -660,7 +660,7 @@ audience_dict = {
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
-  "wine spritzer": {
+  "wine_spritzer": {
     "frontend_name": "PLACEHOLDER FOR WINE SPRITZER",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
