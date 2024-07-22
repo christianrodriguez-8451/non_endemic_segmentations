@@ -94,14 +94,14 @@ base_silhouette, dr_silhouette
 
 # COMMAND ----------
 
-# Calinski-Harbasz
+# Calinski-Harbasz: Higher = Better-defined clusters
 base_ch = float(skl.metrics.calinski_harabasz_score(vectors_base, labels))
 dr_ch = float(skl.metrics.calinski_harabasz_score(vectors, labels))
 base_ch, dr_ch
 
 # COMMAND ----------
 
-# Davies-Bouldin
+# Davies-Bouldin: Lower = Better clustering
 base_db = float(skl.metrics.davies_bouldin_score(vectors_base, labels))
 dr_db = float(skl.metrics.davies_bouldin_score(vectors, labels))
 base_db, dr_db

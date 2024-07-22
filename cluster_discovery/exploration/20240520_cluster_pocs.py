@@ -7,47 +7,32 @@
 from collections import Counter
 import pandas as pd
 import pyspark.sql.functions as f
+import pyspark.sql.types as t
+from pyspark.sql import Window
 
 # COMMAND ----------
 
-dbutils.fs.ls('dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/cluster_views')
+base_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing_c2v_res/cluster_views'
 
 # COMMAND ----------
 
-unrestricted_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/cluster_views/unrestricted_pairwise'
+unrestricted_path = f'{base_path}/unrestricted_pairwise'
 unrestricted = spark.read.parquet(unrestricted_path)
 unrestricted.display()
 
 # COMMAND ----------
 
-light_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/cluster_views/light_pairwise'
+light_path = f'{base_path}/light_pairwise'
 light = spark.read.parquet(light_path)
 light.display()
 
 # COMMAND ----------
 
-prod_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/cluster_views/products_aug'
+prod_path = f'{base_path}/products_aug'
 unrestricted_prods = spark.read.parquet(prod_path)
 
-light_prod_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/cluster_views/light_purge'
+light_prod_path = f'{base_path}/light_purge'
 light_prods = spark.read.parquet(light_prod_path)
-
-# COMMAND ----------
-
-unrestricted_prods.filter(f.col('group') == 16378).display()
-
-# COMMAND ----------
-
-pdf = unrestricted_prods.filter(f.col('group') == 16378).toPandas()
-pdf
-
-# COMMAND ----------
-
-# pdf.pim_description.lower()
-
-# COMMAND ----------
-
-# 'abc'.replace('', '')
 
 # COMMAND ----------
 
@@ -91,26 +76,43 @@ group_keywords = (
     .applyInPandas(get_most_common_keywords, schema)
 )
 group_keywords.display()
-# get_most_common_keywords(pdf)
-
-# COMMAND ----------
-
-unrestricted_keywords = unrestricted.join(group_keywords, on='group', how='inner')
-unrestricted_keywords.select('group', 'num_upcs', 'avg_distance', 'keywords').display()
 
 # COMMAND ----------
 
 
+from pyspark.sql.functions import desc, row_number
+
+window_spec = Window.partitionBy('group').orderBy(f.desc('count'))
+
+top_commodities = (
+    unrestricted_prods
+    .groupBy('group', 'pid_fyt_com_dsc_tx')
+    .count()
+    .withColumn('row_number', f.row_number().over(window_spec))
+    .filter(f.col('row_number') <= 3)
+    .groupBy('group')
+    .agg(f.collect_list('pid_fyt_com_dsc_tx').alias('top_commodities'))
+)
+
+top_sub_commodities = (
+    unrestricted_prods
+    .groupBy('group', 'pid_fyt_sub_com_dsc_tx')
+    .count()
+    .withColumn('row_number', f.row_number().over(window_spec))
+    .filter(f.col('row_number') <= 3)
+    .groupBy('group')
+    .agg(f.collect_list('pid_fyt_sub_com_dsc_tx').alias('top_sub_commodities'))
+)
+
+top_commodities.display()
+top_sub_commodities.display()
 
 # COMMAND ----------
 
-identified_clusters = {
-    853:   'Blueberries,'
-    17692: 'Dog Food',
-    17629: 'Hair Claws',
-    24252: 'Burt\'s Bees',
-}
-
-# COMMAND ----------
-
-unrestricted_prods.filter(f.col('group') == 853).display()
+unrestricted_keywords = (
+    unrestricted
+    .join(group_keywords, on='group', how='inner')
+    .join(top_commodities, on='group', how='inner')
+    .join(top_sub_commodities, on='group', how='inner')
+)
+unrestricted_keywords.select('group', 'num_upcs', 'mean_dist', 'keywords', 'top_commodities', 'top_sub_commodities').display()
