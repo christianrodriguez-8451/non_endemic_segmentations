@@ -25,6 +25,10 @@ con.segmentations.regex_segmentations
 
 # COMMAND ----------
 
+con.segmentations.generation_segmentations
+
+# COMMAND ----------
+
 #Easy way to get all segmentations live
 con.segmentations.all_segmentations
 
@@ -33,7 +37,7 @@ con.segmentations.all_segmentations
 #Segmentation class has metadata on each segmentaion
 #data includes: name, frontend name, segment type, type, propensities,
 #directory, and files
-segment = con.segmentation("stout")
+segment = con.segmentation("millennials")
 segment.name
 
 # COMMAND ----------
