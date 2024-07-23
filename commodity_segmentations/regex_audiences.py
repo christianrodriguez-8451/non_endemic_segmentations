@@ -1,6 +1,50 @@
 # Databricks notebook source
 """
-DOCUMENTATION
+Reads in the regex-segmentations dictionary from config.py and
+pulls in PIM to assign each product their department, sub-department,
+micro-department, commodity, sub-commodity, product name, and
+product description from the UPC hierarchy. After PIM is pulled,
+we impose filters and regular expressions (RegEx) to pull the desired
+UPCs for the given segmentation. A delta file is written out for
+each segmenation's extracted UPCs.
+
+The key-value pair for "pale_ale" from the regex_segmenetations
+dictionary has been provided below to illustrate the logic for
+each entry within the dictionary.
+
+  "pale_ale": {
+    "filter": {"micro_department": ["BEER"]},
+    "must_contain": [["pale"], [" ale"]],
+    "must_not_contain": [["ipa", "indian", "india"]],
+    "composes": "ale",
+
+In the case of "pale_ale", we first use PIM to filter for strictly UPCs under the
+BEER micro-department. The purpose of this initial filter is to make sure we
+only get beer products after we do implement RegEx. Next, we use RegEx to keep
+only the UPCs that contain "pale" and also contain " ale" in either the product name
+or product description. "pale_ale" is a special exception where it also contains a 
+key for "must_not_contain". After applying our first RegEx search, we apply a second one
+and exclude any UPCs that contain any of the following in the product name or product
+description: "ipa", "indian", and "india". The reason for this is because when we 
+implement first RegEx search, we pick up a lot of products that are india(n) pale
+ales. India(n) pale ales and pale ales are beer categories that are distinct
+from one another within the market place. The last key "pale_ale" has is "composes".
+This is an entry to indicate if the given segmentation is a component for the
+specified segmentation. In this case, "pale_ale" is a component for the
+"ale" segmentation. Composite segmentations go through the filtering
+and RegEx like all other segmentations, but the composite segmentation's
+UPC list and household list are unioned with its components' UPC lists
+and household lists.
+
+After we've collected the desired UPCs for the given segmentation,
+we then pull 26 weeks of the latest transaction data via ACDS. For the
+given segmentation, we only keep households that have bought at least
+one of the desired UPCs. Finally, we write out the set of households
+as a delta file for each given segmentation.
+
+The reason for this specific "26-week-buyers-of-X" approach is because the
+KPM guidelines prohibits from any behavior based targeting and 26 weeks is the max
+look back window that is allowed alcoholic products based targeting.
 """
 
 # COMMAND ----------
@@ -60,129 +104,7 @@ spark.conf.set(f"fs.azure.account.oauth2.client.id.{storage_account}.dfs.core.wi
 spark.conf.set(f"fs.azure.account.oauth2.client.secret.{storage_account}.dfs.core.windows.net", service_credential)
 spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.core.windows.net", f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
 
-# COMMAND ----------
-
-regex_segmentations = {
-  #Hard bevs
-  "hard_lemonade": {
-    "filter": {"micro_department": ["BEER", "SPIRITS"]},
-    "must_contain": [["lemonade"]],
-  },
-  "hard_iced_tea": {
-    "filter": {"sub_department": ["LIQUOR"]},
-    "must_contain": [[" tea"]],
-  },
-  #Wine
-  "prosecco": {
-    "filter": {"micro_department": ["WINE"]},
-    "must_contain": [["prosecco"]],
-  },
-  "champagne": {
-    "filter": {"micro_department": ["WINE"]},
-    "must_contain": [["champagne"]],
-  },
-  "wine_spritzer": {
-    "filter": {"micro_department": ["WINE"]},
-    "must_contain": [["spritzer"]],
-  },
-  #Ales
-  "ale": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [[" ale"]],
-    "composes": "ale",
-  },
-  "stout": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["stout"]],
-    "composes": "ale",
-  },
-  "porter": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["porter"]],
-    "composes": "ale",
-  },
-  "ipa": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["ipa", "indian pale", "india pale"]],
-    "composes": "ale",
-  },
-  "hazy": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["hazy", "new england ipa", "new england indian pale ale", "new england india pale ale"]],
-    "composes": "ale",
-  },
-  "wheat_beer": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["wheat"], ["beer", " ale"]],
-    "composes": "ale",
-  },
-  "pale_ale": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["pale"], [" ale"]],
-    "must_not_contain": [["ipa", "indian", "india"]],
-    "composes": "ale",
-  },
-  "amber_ale": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["amber"], [" ale"]],
-    "composes": "ale",
-  },
-  "irish_ale": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["irish"], [" ale"]],
-    "composes": "ale",
-  },
-  "blonde_ale": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["blonde", "blond"], [" ale"]],
-    "composes": "ale",
-  },
-  #Lagers
-  "lager": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["lager"]],
-    "composes": "lager",
-  },
-  "pale_lager": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["pale"], ["lager"]],
-    "composes": "lager",
-  },
-  "light_lager": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["light", "lite"], ["lager"]],
-    "composes": "lager",
-  },
-  "amber_lager": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["amber"], ["lager"]],
-    "composes": "lager",
-  },
-  "pilsner": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["pilsner"]],
-    "composes": "lager",
-  },
-  "oktoberfest": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["okto"]],
-    "composes": "lager",
-  },
-  "bock": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["bock"]],
-    "composes": "lager",
-  },
-  "dunkel": {
-    "filter": {"micro_department": ["BEER"]},
-    "must_contain": [["dunkel"]],
-    "composes": "lager",
-  },
-} 
-
-
-# COMMAND ----------
-
+#Import packages I am relying on
 import resources.config as config
 import pyspark.sql.functions as f
 from datetime import datetime, timedelta, date
@@ -191,6 +113,9 @@ from effodata import ACDS, golden_rules, joiner, sifter, join_on
 import pyspark.sql.types as t
 import commodity_segmentations.config as con
 
+# COMMAND ----------
+
+#Import dictionary that
 regex_dict = con.regex_segmentations
 
 #Read in PIM and keep product name, product description, commodity,
