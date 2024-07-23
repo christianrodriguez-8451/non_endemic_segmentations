@@ -19,7 +19,8 @@ def file_to_spark(path: str) -> str:
     return f'dbfs:/{path[6:]}'
 
 # Paths
-base_path = f'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing_ngr'
+base_path = f'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing_c2v_res'
+restriction_path = 'abfss://acds@sa8451posprd.dfs.core.windows.net/lookups/mhmd_lkup/mhmd_lkup.csv'
 
 embedding_path = f'{spark_to_file(base_path)}/embeddings.npy'
 upc_path = f'{spark_to_file(base_path)}/upc_list.pkl'
@@ -82,7 +83,7 @@ stats_log_schema = StructType([
 ])
 
 # Hyperparameters
-dimension_params = [2, 10, 50, 100]
+dimension_params = [2, 10, 50]
 distance_metrics = ['euclidean', 'cityblock', 'cosine']
 
 dimensionality_reduction_hyperparameters = {
