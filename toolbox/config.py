@@ -13,9 +13,10 @@ class segmentations:
   geospatial_segmentations = ["roadies", "travelers", "metropolitan", "micropolitan"]
   sensitive_segmentations = list(ss_dict.keys())
   regex_segmentations = list(reg_dict.keys())
+  generation_segmentations = ["boomers", "gen_x", "millennials", "gen_z"]
   all_segmentations = (
     funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations + embedding_segmentations
-    + commodity_segmentations + sensitive_segmentations + regex_segmentations
+    + commodity_segmentations + sensitive_segmentations + regex_segmentations + generation_segmentations
   )
   all_segmentations = list(set(all_segmentations))
   all_segmentations.sort()
@@ -660,7 +661,7 @@ audience_dict = {
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
-  "wine spritzer": {
+  "wine_spritzer": {
     "frontend_name": "PLACEHOLDER FOR WINE SPRITZER",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
@@ -774,6 +775,30 @@ audience_dict = {
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
+  "boomers": {
+    "frontend_name": "PLACEHOLDER FOR BOOMERS",
+    "segment_type": "Life Stage",
+    "propensity_compisition": ["H"],
+    "tags": ["PLACEHOLDER"],
+  },
+  "gen_x": {
+    "frontend_name": "PLACEHOLDER FOR GEN X",
+    "segment_type": "Life Stage",
+    "propensity_compisition": ["H"],
+    "tags": ["PLACEHOLDER"],
+  },
+  "millennials": {
+    "frontend_name": "PLACEHOLDER FOR MILLENNIALS",
+    "segment_type": "Life Stage",
+    "propensity_compisition": ["H"],
+    "tags": ["PLACEHOLDER"],
+  },
+  "gen_z": {
+    "frontend_name": "PLACEHOLDER FOR GEN Z",
+    "segment_type": "Life Stage",
+    "propensity_compisition": ["H"],
+    "tags": ["PLACEHOLDER"],
+  },
 }
 
 #TODO: Make a class that groups the segmentations by how their UPC lists
@@ -799,6 +824,9 @@ def get_type(segmentation_name):
 
   elif segmentation_name in segmentations.regex_segmentations:
     segmentation_type = "sensitive"
+
+  elif segmentation_name in segmentations.generation_segmentations:
+    segmentation_type = "generations"
     
   else:
     message = (
@@ -829,6 +857,9 @@ def get_directory(segmentation_name):
   elif segmentation_type == "sensitive":
     segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/sensitive_segmentations/{}/".format(segmentation_name)
 
+  elif segmentation_type == "generations":
+    segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/aiq_generations/{}/".format(segmentation_name)
+
   return(segmentation_dir)
 
 def get_files(segmentation_name):
@@ -842,7 +873,7 @@ def get_files(segmentation_name):
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "stratum_week=" in x[1]]
 
-  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive"]:
+  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive", "generations"]:
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
 
