@@ -542,8 +542,8 @@ def write_out(df, fp, delim=",", fmt="csv"):
 ###Smart Water
 #########################################################
 
-brand = "smart_water"
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+#brand = "smart_water"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 #1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
 #but have not purchased Coca Cola TM.
@@ -559,15 +559,15 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 
 #2) Neutrals: Over the last 52 weeks, have purchased Coca Cola TM at least once,
 #but not more than twice, every 90 days.
-in_fn = "{}_tm_upcs.csv".format(brand)
-notin_fn = None
+#in_fn = "{}_tm_upcs.csv".format(brand)
+#notin_fn = None
 
-max_weeks = 13
-freq_min = 1
-freq_max = 2
-cycle_length = 90
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
 
-output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
+#output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
 
 #3) Intenders: Over the last 52 weeks, have purchased Coca Cola TM at least once,
 #but not more than 3 times, every 30 days.
@@ -604,6 +604,63 @@ output_fn = brand + "_" + "{}week_".format(max_weeks) + "neutrals_hhs"
 #cycle_length = 14
 
 #output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+
+#########################################################
+###Total Coca Cola - Coke + Diet Coke + Coke Zero
+###(re-purposing Diet Coke's files and templates for deployment)
+#########################################################
+
+brand = "diet_coke"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+#1) Rejectors: Over the last 52 weeks, have purchased Total Carbonated Soft Drinks at least twice every 30 days,
+#but have not purchased Coca Cola Cola UPCs.
+#in_fn = "total_soft_drinks_plus_cola.csv"
+#notin_fn = "total_coca_cola_upcs.csv"
+
+#max_weeks = 13
+#freq_min = 2
+#freq_max = None
+#cycle_length = 30
+
+#output_fn = brand + "_{}week_".format(max_weeks) + "rejectors_hhs"
+
+#2) Neutrals: Neutrals: Over the last 52 weeks, have purchased Coca Cola - Cola UPCs at least once,
+#but not more than twice, every 90 days.
+#in_fn = "total_coca_cola_upcs.csv"
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 2
+#cycle_length = 90
+
+#output_fn = brand + "_{}week_".format(max_weeks) + "neutrals_hhs"
+
+#3) Intenders: Over the last 52 weeks, have purchased Coca Cola - Cola UPCs at least once,
+#but not more than 3 times, every 30 days.
+
+#in_fn = "total_coca_cola_upcs.csv"
+#notin_fn = None
+
+#max_weeks = 13
+#freq_min = 1
+#freq_max = 3
+#cycle_length = 30
+
+#output_fn = brand + "_{}week_".format(max_weeks) + "intenders_hhs"
+
+#4) Weekly+: Over the last 52 weeks,
+#have purchased Coca Cola - Cola UPCs at least once every 7 days.
+in_fn = "total_coca_cola_upcs.csv"
+notin_fn = None
+
+max_weeks = 13
+freq_min = 1
+freq_max = None
+cycle_length = 7
+
+output_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
 
 # COMMAND ----------
 
@@ -804,7 +861,7 @@ counts_df.show(50, truncate=False)
 
 # COMMAND ----------
 
-water_cat_bool = True
+water_cat_bool = False
 top50 = True
 
 if water_cat_bool:
@@ -887,6 +944,116 @@ del(in_fn, notin_fn, max_weeks, freq_min, freq_max, cycle_length, output_fn, fp)
 
 # COMMAND ----------
 
+#Code used to egress most of Cola audiences
+
+import pyspark.sql.functions as f
+import datetime as dt
+
+brand = "diet_coke"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+dfs = []
+segs = [
+  "rejectors",
+  "neutrals",
+  "intenders",
+  "weekly_single_serve",
+  #"weekly_multi_serve",
+]
+for seg in segs:
+  my_fn = brand + "_13week_" + seg + "_hhs"
+  fp = my_dir + my_fn
+
+  #Keep only ehhn and segment
+  df = spark.read.format("delta").load(fp)
+  df = df.select("ehhn")
+  df = df.withColumn("segment", f.lit("H"))
+  df.show(10, False)
+
+  count = df.count()
+  seg = brand + "_" + seg
+  print("{} household count: {}".format(seg, count))
+    
+  #Write out to the egress directory and write out in format that engineering expects
+  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+  today = dt.datetime.today().strftime('%Y%m%d')
+  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
+  df.write.mode("overwrite").format("parquet").save(dest_fp)
+  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+  dfs += [df]
+
+
+# COMMAND ----------
+
+df1 = dfs[0]
+df1 = df1.select("ehhn")
+df2 = dfs[1]
+df2 = df2.select("ehhn")
+df3 = dfs[2]
+df3 = df3.select("ehhn")
+df4 = dfs[3]
+df4 = df4.select("ehhn")
+#df5 = dfs[4]
+#df5 = df5.select("ehhn")
+
+df = df1.union(df2).union(df3).union(df4)
+#df = df1.union(df2).union(df3).union(df4).union(df5)
+df = df.dropDuplicates()
+df.count()
+
+# COMMAND ----------
+
+#Code used to egress over smart water audiences
+
+max_weeks = 13
+brand = "smart_water"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+my_fns = [
+  brand + "_{}week_".format(max_weeks) + "rejectors_hhs",
+  brand + "_{}week_".format(max_weeks) + "neutrals_hhs",
+  brand + "_{}week_".format(max_weeks) + "intenders_hhs",
+  brand + "_{}week_".format(max_weeks) + "heavy_" + "neutrals_hhs",
+  brand + "_{}week_".format(max_weeks) + "light_" + "neutrals_hhs",
+]
+segments = [
+  "rejectors",
+  "neutrals",
+  "intenders",
+  "heavy_neutrals",
+  "light_neutrals",
+]
+
+for my_fn, seg in zip(my_fns, segments):
+  fp = my_dir + my_fn
+
+  #Keep only ehhn and segment
+  df = spark.read.format("delta").load(fp)
+  df = df.select("ehhn")
+  df = df.withColumn("segment", f.lit("H"))
+  df.show(10, False)
+
+  if seg == "intenders": 
+    add_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+    add_fp = my_dir + add_fn
+    add_df = spark.read.format("delta").load(add_fp)
+    df = df.union(add_df)
+    df = df.withColumn("segment", f.lit("H"))
+    df = df.dropDuplicates()
+
+  count = df.count()
+  seg = brand + "_" + seg
+  print("{} household count: {}".format(seg, count))
+
+  #Write out to the egress directory and write out in format that engineering expects
+  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+  today = dt.datetime.today().strftime('%Y%m%d')
+  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
+  #df.write.mode("overwrite").format("parquet").save(dest_fp)
+  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+# COMMAND ----------
+
 #Diet Coke
 #Rejectors - 1329596
 #Neutrals - 2246481
@@ -953,113 +1120,9 @@ del(in_fn, notin_fn, max_weeks, freq_min, freq_max, cycle_length, output_fn, fp)
 #Light Neutrals - 217928
 #Altogether - 760318
 
-# COMMAND ----------
-
-#Code used to egress most of Cola audiences
-
-import pyspark.sql.functions as f
-import datetime as dt
-
-df = df1.union(df2).union(df3).union(df4).union(df5)
-
-brand = "minute_maid"
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
-
-dfs = []
-segs = [
-  "rejectors",
-  "neutrals",
-  "intenders",
-  "weekly_single_serve",
-  "weekly_multi_serve",
-]
-for seg in segs:
-  my_fn = brand + "_13week_" + seg + "_hhs"
-  fp = my_dir + my_fn
-
-  #Keep only ehhn and segment
-  df = spark.read.format("delta").load(fp)
-  df = df.select("ehhn")
-  df = df.withColumn("segment", f.lit("H"))
-  df.show(10, False)
-
-  count = df.count()
-  seg = brand + "_" + seg
-  print("{} household count: {}".format(seg, count))
-    
-  #Write out to the egress directory and write out in format that engineering expects
-  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
-  today = dt.datetime.today().strftime('%Y%m%d')
-  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
-  #df.write.mode("overwrite").format("parquet").save(dest_fp)
-  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
-
-  dfs += [df]
-
-
-# COMMAND ----------
-
-df1 = dfs[0]
-df1 = df1.select("ehhn")
-df2 = dfs[1]
-df2 = df2.select("ehhn")
-df3 = dfs[2]
-df3 = df3.select("ehhn")
-df4 = dfs[3]
-df4 = df4.select("ehhn")
-df5 = dfs[4]
-df5 = df5.select("ehhn")
-
-df = df1.union(df2).union(df3).union(df4).union(df5)
-df = df.dropDuplicates()
-df.count()
-
-# COMMAND ----------
-
-#Code used to egress over smart water audiences
-
-max_weeks = 13
-brand = "smart_water"
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
-my_fns = [
-  brand + "_{}week_".format(max_weeks) + "rejectors_hhs",
-  brand + "_{}week_".format(max_weeks) + "neutrals_hhs",
-  brand + "_{}week_".format(max_weeks) + "intenders_hhs",
-  brand + "_{}week_".format(max_weeks) + "heavy_" + "neutrals_hhs",
-  brand + "_{}week_".format(max_weeks) + "light_" + "neutrals_hhs",
-]
-segments = [
-  "rejectors",
-  "neutrals",
-  "intenders",
-  "heavy_neutrals",
-  "light_neutrals",
-]
-
-for my_fn, seg in zip(my_fns, segments):
-  fp = my_dir + my_fn
-
-  #Keep only ehhn and segment
-  df = spark.read.format("delta").load(fp)
-  df = df.select("ehhn")
-  df = df.withColumn("segment", f.lit("H"))
-  df.show(10, False)
-
-  if seg == "intenders": 
-    add_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
-    add_fp = my_dir + add_fn
-    add_df = spark.read.format("delta").load(add_fp)
-    df = df.union(add_df)
-    df = df.withColumn("segment", f.lit("H"))
-    df = df.dropDuplicates()
-
-  count = df.count()
-  seg = brand + "_" + seg
-  print("{} household count: {}".format(seg, count))
-
-  #Write out to the egress directory and write out in format that engineering expects
-  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
-  today = dt.datetime.today().strftime('%Y%m%d')
-  dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
-  #df.write.mode("overwrite").format("parquet").save(dest_fp)
-  print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+#Total Coca Cola
+#Rejectors - 
+#Neutrals - 
+#Intenders - 
+#Weekly+ - 
+#Altogether - 
