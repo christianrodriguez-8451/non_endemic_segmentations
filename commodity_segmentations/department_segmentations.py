@@ -109,7 +109,7 @@ for aud in list(dept_dict.keys()):
   print(message)
 
   #Write out the UPC file
-  fp = f'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/upc_lists/{aud}/{aud}_{today}'
+  fp = f'abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/upc_lists/{aud}/{aud}_{today}'
   depts_upcs.write.mode("overwrite").format("delta").save(fp)
   print(f"Successfully wrote out {fp}!")
   del(message, fp)
