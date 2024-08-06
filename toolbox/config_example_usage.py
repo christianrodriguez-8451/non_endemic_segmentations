@@ -21,11 +21,18 @@ con.segmentations.funlo_segmentations
 
 # COMMAND ----------
 
+#Audiences created by filtering on the given level of hierarchy and deploying regex search patterns
 con.segmentations.regex_segmentations
 
 # COMMAND ----------
 
+#Audiences created by leveraging AIQ data
 con.segmentations.generation_segmentations
+
+# COMMAND ----------
+
+#Audiences created by simply looking at department purchases
+con.segmentations.department_segmentations
 
 # COMMAND ----------
 
@@ -37,7 +44,7 @@ con.segmentations.all_segmentations
 #Segmentation class has metadata on each segmentaion
 #data includes: name, frontend name, segment type, type, propensities,
 #directory, and files
-segment = con.segmentation("millennials")
+segment = con.segmentation("food")
 segment.name
 
 # COMMAND ----------
@@ -90,7 +97,7 @@ segment.upc_files
 #Using the class' attributes to read in the latest UPC file
 
 #Create the segment class for vegetarian
-segment = con.segmentation("stout")
+segment = con.segmentation("food")
 #Directory where upc lists are stored
 upc_dir = segment.upc_directory
 #Pull the filename for the latest UPC list. For audiences that are UPC based, most of their
@@ -106,7 +113,3 @@ upc_df.show(10, truncate=False)
 
 #Tags used on the Pre-Built Audience UI
 segment.tags
-
-# COMMAND ----------
-
-
