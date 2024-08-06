@@ -14,9 +14,10 @@ class segmentations:
   sensitive_segmentations = list(ss_dict.keys())
   regex_segmentations = list(reg_dict.keys())
   generation_segmentations = ["boomers", "gen_x", "millennials", "gen_z"]
+  department_segmentations = ["deli_and_bakery", "meat", "produce", "grocery", "food"]
   all_segmentations = (
     funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations + embedding_segmentations
-    + commodity_segmentations + sensitive_segmentations + regex_segmentations + generation_segmentations
+    + commodity_segmentations + sensitive_segmentations + regex_segmentations + generation_segmentations + department_segmentations
   )
   all_segmentations = list(set(all_segmentations))
   all_segmentations.sort()
@@ -799,6 +800,36 @@ audience_dict = {
     "propensity_compisition": ["H"],
     "tags": ["PLACEHOLDER"],
   },
+  "food": {
+    "frontend_name": "PLACEHOLDER FOR food",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Food"],
+  },
+  "grocery": {
+    "frontend_name": "PLACEHOLDER FOR grocery",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Food"],
+  },
+  "produce": {
+    "frontend_name": "PLACEHOLDER FOR produce",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Food"],
+  },
+  "meat": {
+    "frontend_name": "PLACEHOLDER FOR meat",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Food"],
+  },
+  "deli_and_bakery": {
+    "frontend_name": "PLACEHOLDER FOR deli_and_bakery",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Food"],
+  },
 }
 
 #TODO: Make a class that groups the segmentations by how their UPC lists
@@ -827,6 +858,9 @@ def get_type(segmentation_name):
 
   elif segmentation_name in segmentations.generation_segmentations:
     segmentation_type = "generations"
+
+  elif segmentation_name in segmentations.department_segmentations:
+    segmentation_type = "department"
     
   else:
     message = (
@@ -860,6 +894,9 @@ def get_directory(segmentation_name):
   elif segmentation_type == "generations":
     segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/aiq_generations/{}/".format(segmentation_name)
 
+  elif segmentation_type == "department":
+    segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/department_segmentations/{}/".format(segmentation_name)
+  
   return(segmentation_dir)
 
 def get_files(segmentation_name):
@@ -873,7 +910,7 @@ def get_files(segmentation_name):
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "stratum_week=" in x[1]]
 
-  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive", "generations"]:
+  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive", "generations", "department"]:
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
 
@@ -886,6 +923,7 @@ def get_upc_type(segmentation_name):
   search_keys = list(em_dict.keys())
   comm_keys = list(cs_dict.keys())
   regex_keys = list(reg_dict.keys())
+  dept_keys = ["food", "grocery", "produce", "meat", "deli_and_bakery"]
 
   if (segmentation_name in search_keys) and (segmentation_name in comm_keys):
     message = (
@@ -898,6 +936,8 @@ def get_upc_type(segmentation_name):
     upc_type = "commodities_subcommodities"
   elif segmentation_name in regex_keys:
     upc_type = "regex"
+  elif segmentation_name in dept_keys:
+    upc_type = "department"
   else:
     upc_type = None
 
@@ -911,7 +951,7 @@ def get_upc_directory(segmentation_name):
 
   if upc_type == "search_embedding":
     upc_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/diet_query_embeddings/"
-  elif (upc_type == "commodities_subcommodities") or (upc_type == "regex"):
+  elif (upc_type == "commodities_subcommodities") or (upc_type == "regex") or (upc_type == "department"):
     upc_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/upc_lists/{}/".format(segmentation_name)
   else:
     upc_dir = None
@@ -941,7 +981,7 @@ def get_upc_files(segmentation_name):
 
     files.sort()
     
-  elif (upc_type == "commodities_subcommodities") or (upc_type == "regex"):
+  elif (upc_type == "commodities_subcommodities") or (upc_type == "regex")or (upc_type == "department"):
     files = dbutils.fs.ls(upc_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
     files.sort()
