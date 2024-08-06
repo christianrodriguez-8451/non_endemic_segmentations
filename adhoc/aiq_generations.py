@@ -38,10 +38,12 @@ import commodity_segmentations.config as con
 
 # COMMAND ----------
 
+today = str(dt.date.today().strftime('%Y%m%d'))
 #Pull latest AIQ data for generation designation at ehhn level
-aiq = seg.get_seg_for_date('aiq', '20240722')
+aiq = seg.get_seg_for_date('aiq', today)
 aiq = aiq.select("ehhn", "hoh_generation")
 aiq = aiq.dropDuplicates(["ehhn"])
+del(today)
 
 message = "Counts by generation (AIQ):\n"
 print(message)
