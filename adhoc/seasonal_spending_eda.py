@@ -1,18 +1,25 @@
 # Databricks notebook source
+# MAGIC %pip install protobuf==3.20.*
+
+# COMMAND ----------
+
 from pyspark.sql import SparkSession
-from datetime import datetime, timedelta
 import pyspark.sql.functions as f
 import pyspark.sql.types as t
 from pyspark.sql.window import Window
 from datetime import datetime, timedelta, date
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 import sklearn.preprocessing as sk_pre
-from effodata import ACDS, golden_rules
-import resources.config as config
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
+from matplotlib.gridspec import GridSpec
+from scipy.stats import gaussian_kde
+from effodata import ACDS, golden_rules
+import resources.config as config
 
 # Initialize a Spark session
 spark = SparkSession.builder.appName("seasonal_spending").getOrCreate()
@@ -30,13 +37,24 @@ def daily_bw_plot(vis, df, label):
   exploded_df = pandas_df.explode('dollars_spent_list')
   # Rename columns for clarity
   exploded_df.columns = ['date', 'dollars_spent']
+  # Formate the date column for readability
+  exploded_df['date'] = exploded_df.astype(str)
+  exploded_df['date'] = exploded_df['date'].apply(lambda x: f"{x[:4]}-{x[4:6]}-{x[6:]}")
 
   # Create the box-and-whiskers plot
-  sns.boxplot(x='date', y='dollars_spent', data=exploded_df, showfliers=False)
+  sns.boxplot(
+    x='date', y='dollars_spent', data=exploded_df, showfliers=False,
+    boxprops=dict(color='black', facecolor='white'),
+    whiskerprops=dict(color='black'),
+    capprops=dict(color='black'),
+    medianprops=dict(color='black'),
+    flierprops=dict(markerfacecolor='black', markeredgecolor='black'),
+  )
   vis.set_title('Box-and-Whiskers Plot of Dollars Spent Across Time ({})'.format(label))
   vis.set_xlabel('Date')
   vis.set_ylabel('Dollars Spent')
-  dates = pandas_df["date"]
+  vis.set_xticklabels(vis.get_xticklabels(), rotation=60)
+  #dates = pandas_df["date"]
   #vis.set_xticks(dates)
   #plt.setp(vis.get_xticklabels(), rotation=45, ha="right")
 
@@ -47,10 +65,10 @@ def seasonal_plots(daily_df, dept_df, fig, gs, starting_index):
   daily_bw_plot(vis=vis1, df=daily_df, label="OVERALL")
 
   #Get all unique departments in dataset
-  departments = dept_df.select("department").dropDuplicates().collect()
-  departments = [x["department"] for x in departments]
+  departments = dept_df.select("micro_department").dropDuplicates().collect()
+  departments = [x["micro_department"] for x in departments]
   for dept in departments:
-    temp = dept_df.filter(f.col("department") == dept)
+    temp = dept_df.filter(f.col("micro_department") == dept)
 
     starting_index += 1
     visi = fig.add_subplot(gs[starting_index, :])
@@ -90,10 +108,27 @@ def kmean_clustering(df, num_col):
   #We could've just pulled this from pandas_df, but we want the cut-off for data visuals
   df = df.withColumn(
     "cluster_class",
-    f.when(f.col(num_col) < cut_off, "REGULAR")
-          .otherwise("HOLIDAY")
+    f.when(f.col(num_col) < cut_off, "Cluster A")
+          .otherwise("Cluster B")
   )
   return([df, cut_off])
+
+def gcard_counts(gcard_ehhns, ehhn_df, group_col):
+  """
+  """
+  gcard_ehhns = gcard_ehhns.withColumn("bought_greeting_card", f.lit("Yes"))
+  counts = gcard_ehhns.join(ehhn_df, "ehhn", "outer")
+  counts = counts.fillna({
+    "bought_greeting_card": "No",
+    group_col: "No group assignment (not present in spending data)",
+  })
+  counts = counts.\
+  groupby("bought_greeting_card", group_col).\
+  agg(
+    f.count(group_col).alias("ehhn_count"),
+  )
+  
+  return(counts)
 
 def kde_plot(vis, df, num_col, perc_cutoff1, perc_cutoff2, cluster_cutoff):
   # Collect data from Spark DataFrame
@@ -137,7 +172,7 @@ def kde_plot_by_group(vis, df, num_col, group_col, x_limit):
       group_count = group.shape[0]
       
       # Plot the KDE with shading and color
-      vis.plot(x_range, kde_values, label=f'Group {name} (n={group_count})', color=color)
+      vis.plot(x_range, kde_values, label=f'{name} (n={group_count})', color=color)
       vis.fill_between(x_range, kde_values, alpha=0.6, color=color)
 
   # Step 6: Add labels and title
@@ -149,50 +184,83 @@ def kde_plot_by_group(vis, df, num_col, group_col, x_limit):
   vis.set_ylabel('Density')
   vis.legend()
 
-def table(df, index, fig):
+def table(df, vis, font_size=None):
   temp = df.toPandas()
   c_labels = list(temp.columns)
   temp = temp.to_numpy()
   r_labels = list(range(0, len(temp)))
 
-  vis = fig.add_subplot(gs[index, :])
-  vis.xaxis.set_visible(False)
-  vis.yaxis.set_visible(False)
-  vis.set_frame_on(False)
+  vis.axis('tight')
+  vis.axis('off')
   
-  table = vis.table(cellText=temp, colLabels=c_labels, rowLabels=r_labels)
-  table.auto_set_font_size(True)
-  #table.auto_set_font_size(False)
-  #table.set_fontsize(10)
-  table.scale(1.2, 1.2)
+  table = vis.table(cellText=temp, colLabels=c_labels, rowLabels=r_labels, cellLoc="center", loc="center")
+  table.scale(1, 1)
+
+  if font_size is None:
+    table.auto_set_font_size(True)
+  else:
+    table.auto_set_font_size(False)
+    table.set_fontsize(font_size)
+
+def daily_bw_plot(vis, df, label):
+# Aggregate data
+  aggregated_df = df.\
+    groupBy("date").\
+    agg(f.collect_list("dollars_spent").alias("dollars_spent_list"))
+  #Convert to Pandas DataFrame
+  pandas_df = aggregated_df.toPandas()
+  pandas_df = pandas_df.sort_values(by=["date"], ascending=True)
+  pandas_df = pandas_df.reset_index(drop=True)
+  #Explode the list column to separate rows
+  exploded_df = pandas_df.explode('dollars_spent_list')
+  #Rename columns for clarity
+  exploded_df.columns = ['date', 'dollars_spent']
+  #Formate the date column for readability
+  exploded_df['date'] = exploded_df.astype(str)
+  exploded_df['date'] = exploded_df['date'].apply(lambda x: f"{x[:4]}-{x[4:6]}-{x[6:]}")
+
+  #Create the box-and-whiskers plot
+  sns.boxplot(
+    x='date', y='dollars_spent', data=exploded_df, showfliers=False,
+    boxprops=dict(color='black', facecolor='white'),
+    whiskerprops=dict(color='black'),
+    capprops=dict(color='black'),
+    medianprops=dict(color='black'),
+    flierprops=dict(markerfacecolor='black', markeredgecolor='black'),
+  )
+  vis.set_title('Box-and-Whiskers Plot of Dollars Spent Across Time ({})'.format(label))
+  vis.set_xlabel('Date')
+  vis.set_ylabel('Dollars Spent')
+  vis.set_xticklabels(vis.get_xticklabels(), rotation=60)
+  #dates = pandas_df["date"]
+  #vis.set_xticks(dates)
+  #plt.setp(vis.get_xticklabels(), rotation=45, ha="right")
+
+def seasonal_plots(daily_df, dept_df, fig):
+  """
+  """
+  #Get all unique departments in dataset
+  departments = dept_df.select("micro_department").dropDuplicates().collect()
+  departments = [x["micro_department"] for x in departments]
+
+  #
+  n_subplots = 1 + len(departments)
+  index = 1
+  #Plot the initial box-and-whisker plot. The overall spending plot.
+  vis1 = fig.add_subplot(n_subplots, 1, index)
+  daily_bw_plot(vis=vis1, df=daily_df, label="OVERALL")
+
+  #Plot the box-and-whisker on spending for the rest of the departments
+  for dept in departments:
+    temp = dept_df.filter(f.col("micro_department") == dept)
+
+    index += 1
+    visi = fig.add_subplot(n_subplots, 1, index)
+    daily_bw_plot(vis=visi, df=temp, label=dept)
 
 # COMMAND ----------
 
-#Read in datasets by holiday
-audience = "july_4th"
-output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + audience + "/"
-
-dept_fp = output_dir + "{}_department_spending".format(audience)
-dept_df = spark.read.format("delta").load(dept_fp)
-dept_df.cache()
-
-daily_fp = output_dir + "{}_daily_spending".format(audience)
-daily_df = spark.read.format("delta").load(daily_fp)
-daily_df.cache()
-
-ehhn_fp = output_dir + "{}_ehhn_spending".format(audience)
-ehhn_df = spark.read.format("delta").load(ehhn_fp)
-ehhn_df.cache()
-
-#ehhn_df = ehhn_df.limit(1000)
-#ehhn_df.cache()
-#dept_df = dept_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
-#dept_df.cache()
-#daily_df = daily_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
-#daily_df.cache()
-
-# COMMAND ----------
-
+audience = "mothers_day"
 fp = (
   "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" +
   "seasonal_commodities_control.csv"
@@ -223,50 +291,97 @@ h_scomms.cache()
 pim_fp = config.get_latest_modified_directory(config.azure_pim_core_by_cycle)
 pim = config.spark.read.parquet(pim_fp)
 pim = pim.select(
+  f.col("upc").alias("gtin_no"),
   f.col("familyTree.commodity.name").alias("commodity"),
   f.col("familyTree.subCommodity.name").alias("sub_commodity"),
   f.col("familyTree.primaryDepartment.name").alias("department"),
+  f.col("familyTree.primaryDepartment.recapDepartment.name").alias("sub_department"),
+  f.col("familyTree.primaryDepartment.recapDepartment.department.name").alias("micro_department"),
 )
+#
+gcard_upcs = pim.filter(f.col("commodity") == "GREETING CARDS").\
+select("gtin_no").\
+dropDuplicates()
+
 #For assigning each gtin_no their commodity and sub-commodity
-pim = pim.select("commodity", "sub_commodity", "department")
+pim = pim.select("commodity", "sub_commodity", "micro_department")
 pim = pim.dropDuplicates(["commodity", "sub_commodity"])
 pim.cache()
 
-temp = pim.select(["commodity", "department"]).dropDuplicates()
+temp = pim.select(["commodity", "micro_department"]).dropDuplicates()
 h_comms = h_comms.join(temp, "commodity", "left")
-h_comms = h_comms.orderBy(["department", "commodity"])
-h_comms = h_comms.select("department", "commodity", "seasonality_score")
+h_comms = h_comms.orderBy(["micro_department", "commodity"])
+h_comms = h_comms.select("micro_department", "commodity", "seasonality_score")
 del(temp)
 
 h_scomms = h_scomms.join(pim, ["commodity", "sub_commodity"], "left")
-h_scomms = h_scomms.orderBy(["department", "commodity", "sub_commodity"])
-h_scomms = h_scomms.select("department", "commodity", "sub_commodity", "seasonality_sub_score")
+h_scomms = h_scomms.orderBy(["micro_department", "commodity", "sub_commodity"])
+h_scomms = h_scomms.select("micro_department", "commodity", "sub_commodity", "seasonality_sub_score")
 
 h_comms.show(10, truncate=False)
 h_scomms.show(10, truncate=False)
 
 # COMMAND ----------
 
-from matplotlib.gridspec import GridSpec
-from scipy.stats import gaussian_kde
-import numpy as np
+h_dates = {
+  "may_5th": "20230505",
+  "mothers_day": "20230514",
+  "memorial_day": "20230529",
+  "fathers_day": "20230618",
+  "july_4th": "20230704",
+}
+h_enddate = h_dates[audience]
+h_enddate = datetime.strptime(h_enddate, '%Y%m%d')
+h_startdate = h_enddate - timedelta(days=6)
 
-#Calculate how many departments in given holiday commodities/sub-commodities
-#to set how many rows will be needed in grid visual
-departments = dept_df.select("department").dropDuplicates().collect()
-departments = [x["department"] for x in departments]
-departments = list(set(departments))
-n_depts = len(departments)
-n_rows = (4 + 1 + n_depts)
-if h_comms.count() > 0:
-  n_rows += 1
+acds = ACDS(use_sample_mart=False)
+acds = acds.get_transactions(h_startdate, h_enddate, apply_golden_rules=golden_rules(['customer_exclusions']))
+acds = acds.select("ehhn", "gtin_no")
 
-if h_scomms.count() > 0:
-  n_rows += 1
+gcard_trans = acds.join(gcard_upcs, "gtin_no", "inner")
+gcard_ehhns = gcard_trans.select("ehhn").dropDuplicates()
+gcard_ehhns = gcard_ehhns.withColumn("bought_greeting_card", f.lit("Yes"))
 
-#Define the grid we will be laying our visuals on
-fig = plt.figure(figsize=(10, 30))
-gs = GridSpec(nrows=n_rows, ncols=2, height_ratios=[3]*n_rows, width_ratios=[1]*2)
+gcard_ehhns.cache()
+print(f"Number of households that bought a greeting card during the holiday week: {gcard_ehhns.count()}")
+
+# COMMAND ----------
+
+#Read in datasets by holiday
+output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + audience + "/"
+
+dept_fp = output_dir + "{}_microdepartment_spending".format(audience)
+dept_df = spark.read.format("delta").load(dept_fp)
+
+daily_fp = output_dir + "{}_daily_spending".format(audience)
+daily_df = spark.read.format("delta").load(daily_fp)
+
+ehhn_fp = output_dir + "{}_ehhn_spending".format(audience)
+ehhn_df = spark.read.format("delta").load(ehhn_fp)
+ehhn_df = ehhn_df.join(gcard_ehhns, "ehhn", "left")
+ehhn_df = ehhn_df.fillna({"bought_greeting_card": "No"})
+
+#ehhn_df = ehhn_df.limit(10000)
+#dept_df = dept_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
+#daily_df = daily_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
+
+ehhn_df.cache()
+dept_df.cache()
+daily_df.cache()
+
+print("31 day spender count by whether or not they bought a greeting card:\n")
+ehhn_df.\
+groupby("bought_greeting_card").\
+agg(f.count("ehhn").alias("ehhn_count")).\
+show(50, truncate=False)
+
+# COMMAND ----------
+
+dbfs_dir1 = "/dbfs/dbfs/FileStore/users/c127414/"
+fn = "visual_analysis_{}.pdf".format(audience)
+pdf = PdfPages(dbfs_dir1 + fn)
+
+# COMMAND ----------
 
 #Do percentile clustering by dollars spent
 output = percentile_clustering(df=ehhn_df, num_col="dollars_spent")
@@ -282,66 +397,346 @@ ehhn_df = output[0]
 cut_off = output[1]
 del(output)
 
-#Visualize dollars spent distribution at overall and group levels
-vis1 = fig.add_subplot(gs[0, :])
-kde_plot(vis=vis1, df=ehhn_df, num_col="dollars_spent", perc_cutoff1=x33, perc_cutoff2=x66, cluster_cutoff=cut_off)
-vis2 = fig.add_subplot(gs[1, 0])
+#Figure 1 - Analyze dollars spent
+#figure dimensions - (width x height)
+fig1 = plt.figure(figsize=(15, 15))
+n_subplots = 5
+index = 1
+
+#Sub-plot 1 -
+vis1 = fig1.add_subplot(n_subplots, 1, index)
+x_limit = max([x33, x66, cut_off])
+kde_plot_by_group(vis=vis1, df=ehhn_df, num_col="dollars_spent", group_col="bought_greeting_card", x_limit=x_limit)
+#Place cut-offs for 33rd/66th percentiles
+vis1.axvline(x=x33, color='r', linestyle='--', linewidth=2)
+vis1.axvline(x=x66, color='r', linestyle='--', linewidth=2)
+#Place cut-off from clustering based method
+vis1.axvline(x=cut_off, color='b', linestyle='--', linewidth=2)
+vis1.legend()
+del(x_limit)
+
+index += 1
+#Sub-plot 2 -
+vis2 = fig1.add_subplot(n_subplots, 1, index)
 kde_plot_by_group(vis=vis2, df=ehhn_df, num_col="dollars_spent", group_col="percentile_class", x_limit=x66)
-vis3 = fig.add_subplot(gs[1, 1])
-kde_plot_by_group(vis=vis3, df=ehhn_df, num_col="dollars_spent", group_col="cluster_class", x_limit=cut_off)
+
+index += 1
+#Sub-plot 3 - 
+vis3 = fig1.add_subplot(n_subplots, 1, index)
+counts = ehhn_df.\
+groupby("percentile_class", "bought_greeting_card").\
+agg(
+  f.count("percentile_class").alias("ehhn_count"),
+)
+table(df=counts, vis=vis3)
+
+index += 1
+#Sub-plot 4 -
+vis4 = fig1.add_subplot(n_subplots, 1, index)
+kde_plot_by_group(vis=vis4, df=ehhn_df, num_col="dollars_spent", group_col="cluster_class", x_limit=cut_off)
+
+index += 1
+#Sub-plot 5 - 
+vis5 = fig1.add_subplot(n_subplots, 1, index)
+counts = ehhn_df.\
+groupby("cluster_class", "bought_greeting_card").\
+agg(
+  f.count("cluster_class").alias("ehhn_count"),
+)
+table(df=counts, vis=vis5)
+
+#Adjust layout and save figure to specified PDF
+plt.tight_layout()
+pdf.savefig(fig1)
+plt.show()
+
+# COMMAND ----------
 
 #Reset the dataframe
-ehhn_df = ehhn_df.select("ehhn", "dollars_spent", "weighted_dollars_spent")
+ehhn_df = ehhn_df.select("ehhn", "dollars_spent", "weighted_dollars_spent", "bought_greeting_card")
+ehhn_df = ehhn_df.filter(f.col("weighted_dollars_spent") > 0)
 del(x33, x66, cut_off)
 
-#Do percentile clustering by weighted dollars spent
+#Do percentile clustering by WEIGHTED dollars spent
 output = percentile_clustering(df=ehhn_df, num_col="weighted_dollars_spent")
 ehhn_df = output[0]
+percentile_df = ehhn_df
 percentiles = output[1]
 x33 = percentiles[0]
 x66 = percentiles[1]
 del(output, percentiles)
 
-#Do kmean clustering by weighted dollars spent
+#Do kmean clustering by WEIGHTED dollars spent
 output = kmean_clustering(df=ehhn_df, num_col="weighted_dollars_spent")
 ehhn_df = output[0]
+cluster_df = ehhn_df
 cut_off = output[1]
 del(output)
 
-#Visualize weighted dollars spent distribution at overall and group levels
-vis4 = fig.add_subplot(gs[2, :])
-kde_plot(vis=vis4, df=ehhn_df, num_col="weighted_dollars_spent", perc_cutoff1=x33, perc_cutoff2=x66, cluster_cutoff=cut_off)
-vis5 = fig.add_subplot(gs[3, 0])
-kde_plot_by_group(vis=vis5, df=ehhn_df, num_col="weighted_dollars_spent", group_col="percentile_class", x_limit=x66)
-vis6 = fig.add_subplot(gs[3, 1])
-kde_plot_by_group(vis=vis6, df=ehhn_df, num_col="weighted_dollars_spent", group_col="cluster_class", x_limit=cut_off)
+#Figure 2 - Analyze WEIGHTED dollars spent
+#figure dimensions - (width x height)
+fig1 = plt.figure(figsize=(15, 15))
+n_subplots = 5
+index = 1
 
-#Visualize spending-across-time at overall and department levels
-seasonal_plots(daily_df=daily_df, dept_df=dept_df, fig=fig, gs=gs, starting_index=4)
+#Sub-plot 1 -
+vis1 = fig1.add_subplot(n_subplots, 1, index)
+x_limit = max([x33, x66, cut_off])
+kde_plot_by_group(vis=vis1, df=ehhn_df, num_col="weighted_dollars_spent", group_col="bought_greeting_card", x_limit=x_limit)
+#Place cut-offs for 33rd/66th percentiles
+vis1.axvline(x=x33, color='r', linestyle='--', linewidth=2)
+vis1.axvline(x=x66, color='r', linestyle='--', linewidth=2)
+#Place cut-off from clustering based method
+vis1.axvline(x=cut_off, color='b', linestyle='--', linewidth=2)
+vis1.legend()
+del(x_limit)
 
-if (h_comms.count() > 0) & (h_scomms.count() == 0):
-  table(h_comms, index=n_rows-1, fig=fig)
+index += 1
+#Sub-plot 2 -
+vis2 = fig1.add_subplot(n_subplots, 1, index)
+kde_plot_by_group(vis=vis2, df=ehhn_df, num_col="weighted_dollars_spent", group_col="percentile_class", x_limit=x66)
 
-elif (h_comms.count() == 0) & (h_scomms.count() > 0):
-  table(h_scomms, index=n_rows-1, fig=fig)
+index += 1
+#Sub-plot 3 - 
+vis3 = fig1.add_subplot(n_subplots, 1, index)
+counts = ehhn_df.\
+groupby("percentile_class", "bought_greeting_card").\
+agg(
+  f.count("percentile_class").alias("ehhn_count"),
+)
+table(df=counts, vis=vis3)
 
-elif (h_comms.count() > 0) & (h_scomms.count() > 0):
-  table(h_comms, index=n_rows-2, fig=fig)
-  table(h_scomms, index=n_rows-1, fig=fig)
+index += 1
+#Sub-plot 4 -
+vis4 = fig1.add_subplot(n_subplots, 1, index)
+kde_plot_by_group(vis=vis4, df=ehhn_df, num_col="weighted_dollars_spent", group_col="cluster_class", x_limit=cut_off)
 
-#Show grid visual
+index += 1
+#Sub-plot 5 - 
+vis5 = fig1.add_subplot(n_subplots, 1, index)
+counts = ehhn_df.\
+groupby("cluster_class", "bought_greeting_card").\
+agg(
+  f.count("cluster_class").alias("ehhn_count"),
+)
+table(df=counts, vis=vis5)
+
+#Adjust layout and save figure to specified PDF
 plt.tight_layout()
-output_fig = plt.gcf()
+pdf.savefig(fig1)
 plt.show()
 
-#Write visuals as pdf
-fn = "visual_analysis_{}.pdf".format(audience)
-dbfs_dir1 = "/dbfs/dbfs/FileStore/users/c127414/"
+
+# COMMAND ----------
+
+#Get all unique departments in dataset
+departments = dept_df.select("micro_department").dropDuplicates().collect()
+departments = [x["micro_department"] for x in departments]
+fig1 = plt.figure(figsize=(15, 8*len(departments)))
+#Visualize spending-across-time at overall and department levels
+seasonal_plots(daily_df=daily_df, dept_df=dept_df, fig=fig1)
+
+#Adjust layout and save figure to specified PDF
+plt.subplots_adjust(hspace=3)
+plt.tight_layout()
+pdf.savefig(fig1)
+plt.show()
+
+# COMMAND ----------
+
+# Create a figure and an axis
+fig, ax = plt.subplots(figsize=(15, 15))
+
+# Create the table
+table(df=h_comms, vis=ax)
+
+plt.tight_layout()
+pdf.savefig(fig)
+plt.show()
+
+# COMMAND ----------
+
+# Create a figure and an axis
+fig, ax = plt.subplots(figsize=(15, 70))
+
+# Create the table
+table(df=h_scomms, vis=ax, font_size=15)
+
+plt.tight_layout()
+pdf.savefig(fig)
+plt.show()
+
+# COMMAND ----------
+
+pdf.close()
+
 dbfs_dir2 = "dbfs:/dbfs/FileStore/users/c127414/"
 abfs_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/"
-
-output_fig.savefig(dbfs_dir1 + fn, format="pdf", bbox_inches="tight")
 dbutils.fs.cp(dbfs_dir2 + fn, abfs_dir + fn)
 
-message = abfs_dir + fn + " successfully written out!"
-print(message)
+# COMMAND ----------
+
+daily_df.limit(100).display()
+
+# COMMAND ----------
+
+import numpy as np
+import pandas as pd
+
+#Isolate to the day we'd like to freeze
+df = daily_df.filter(f.col("date") == 20230508)
+
+# Calculate the 25th and 75th quantiles
+quantiles = df.approxQuantile("dollars_spent", [0.25, 0.75], 0.0)
+q1 = quantiles[0]  # 25th quantile
+q3 = quantiles[1]  # 75th quantile
+
+# Calculate the interquartile range (IQR)
+iqr = q3 - q1
+
+# Calculate the upper and lower limits
+lower_limit = q1 - 1.5 * iqr
+upper_limit = q3 + 1.5 * iqr
+
+# Show the results
+print(f"25th quantile (Q1): {q1}")
+print(f"75th quantile (Q3): {q3}")
+print(f"Interquartile Range (IQR): {iqr}")
+print(f"Lower Limit: {lower_limit}")
+print(f"Upper Limit: {upper_limit}")
+
+# COMMAND ----------
+
+#Create the box-and-whiskers plot
+df = daily_df.filter(f.col("date") == 20230508)
+df = df.toPandas()
+x = sns.boxplot(
+    x='date', y='dollars_spent', data=df, showfliers=False,
+    boxprops=dict(color='black', facecolor='white'),
+    whiskerprops=dict(color='black'),
+    capprops=dict(color='black'),
+    medianprops=dict(color='black'),
+    flierprops=dict(markerfacecolor='black', markeredgecolor='black'),
+)
+x
+
+# COMMAND ----------
+
+# Optional: Extracting the plotted data (whiskers)
+whiskers = [line.get_ydata() for line in x.get_lines()[1:3]]
+print(f"Whiskers: {whiskers}")
+
+# COMMAND ----------
+
+cutoffs = [x[0] for x in boxplot_stats]
+cutoffs.sort()
+q3 = cutoffs[3]
+q3
+
+# COMMAND ----------
+
+#Q1 to lower bound
+#Q3 to upper limit
+#Lower Limit
+#Upper Limit
+#Median
+boxplot_stats = [line.get_ydata() for line in x.get_lines()]
+boxplot_upper_limit = max([i[0] for i in boxplot_stats])
+print(boxplot_upper_limit)
+
+# COMMAND ----------
+
+date_cutoff = 20230508
+
+quantiles = list(range(0, 100, 5))
+quantiles = [i/100 for i in quantiles]
+df = daily_df.filter(f.col("date") == date_cutoff)
+quantile_cutoffs = df.approxQuantile("dollars_spent", quantiles, 0.0)
+quantile_cutoffs
+
+
+
+#date_cutoff = 20230508
+#ehhns = daily_df.filter(f.col("date") > date_cutoff)
+#ehhns = ehhns.filter(f.col("dollars_spent") > q3)
+#ehhns = ehhns.select("ehhn").dropDuplicates()
+#ehhns.count()
+
+# COMMAND ----------
+
+counts = []
+gcard_confirms = []
+
+for q in quantile_cutoffs:
+  audience = daily_df.filter(f.col("date") > date_cutoff)
+  audience = audience.filter(f.col("dollars_spent") > q)
+  audience = audience.select("ehhn").dropDuplicates()
+  counts += [audience.count()]
+
+  gcard_confirms += [audience.join(gcard_ehhns, "ehhn", "inner").count()]
+
+# COMMAND ----------
+
+data = [quantiles, quantile_cutoffs, counts, gcard_confirms]
+quantile_stats = pd.DataFrame(data)
+quantile_stats = quantile_stats.T
+quantile_stats.columns = ["quantile", "quantile_cutoff", "ehhn_count", "purchased_card_count"]
+quantile_stats["ehhn_count"] = quantile_stats["ehhn_count"].astype(int)
+quantile_stats["purchased_card_count"] = quantile_stats["purchased_card_count"].astype(int)
+
+quantile_stats["card_purchasers_captured"] = (quantile_stats["purchased_card_count"]/gcard_ehhns.count())*100
+quantile_stats["card_purchasers_captured"] = quantile_stats["card_purchasers_captured"].round(2)
+quantile_stats
+
+# COMMAND ----------
+
+import matplotlib.pyplot as plt
+
+# Assuming you have a DataFrame named df
+plt.figure(figsize=(8, 8))
+plt.scatter(quantile_stats['quantile'], quantile_stats['card_purchasers_captured'], color='blue', marker='o')
+plt.gca().invert_xaxis()
+
+# Add labels and a title
+plt.xlabel('Quantile')
+plt.ylabel('Card Purchasers Captured')
+plt.title('Scatterplot of Quantile vs. Card Purchasers Captured')
+
+# Show the plot
+plt.show()
+
+# COMMAND ----------
+
+def daily_bw_plot(vis, df, label):
+# Aggregate data
+  aggregated_df = df.\
+    groupBy("date").\
+    agg(f.collect_list("dollars_spent").alias("dollars_spent_list"))
+  #Convert to Pandas DataFrame
+  pandas_df = aggregated_df.toPandas()
+  pandas_df = pandas_df.sort_values(by=["date"], ascending=True)
+  pandas_df = pandas_df.reset_index(drop=True)
+  #Explode the list column to separate rows
+  exploded_df = pandas_df.explode('dollars_spent_list')
+  #Rename columns for clarity
+  exploded_df.columns = ['date', 'dollars_spent']
+  #Formate the date column for readability
+  exploded_df['date'] = exploded_df.astype(str)
+  exploded_df['date'] = exploded_df['date'].apply(lambda x: f"{x[:4]}-{x[4:6]}-{x[6:]}")
+
+  #Create the box-and-whiskers plot
+  sns.boxplot(
+    x='date', y='dollars_spent', data=exploded_df, showfliers=False,
+    boxprops=dict(color='black', facecolor='white'),
+    whiskerprops=dict(color='black'),
+    capprops=dict(color='black'),
+    medianprops=dict(color='black'),
+    flierprops=dict(markerfacecolor='black', markeredgecolor='black'),
+  )
+  vis.set_title('Box-and-Whiskers Plot of Dollars Spent Across Time ({})'.format(label))
+  vis.set_xlabel('Date')
+  vis.set_ylabel('Dollars Spent')
+  vis.set_xticklabels(vis.get_xticklabels(), rotation=60)
+  #dates = pandas_df["date"]
+  #vis.set_xticks(dates)
+  #plt.setp(vis.get_xticklabels(), rotation=45, ha="right")
