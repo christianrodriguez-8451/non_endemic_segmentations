@@ -150,10 +150,15 @@ for h in list(h_dates.keys()):
 
   #Calculated weighted spending: (seasonal_weight + temporal weight) * net_spend_amt
   h_trans = h_trans.withColumn("weighted_net_spend_amt", f.col("seasonality_score") * f.col("net_spend_amt"))
+  #Mute transactions x days away
+  weighted_startdate = h_enddate - timedelta(days=6)
+  h_trans = h_trans.withColumn(
+    "weighted_net_spend_amt",
+    f.when(f.col("date") < int(weighted_startdate.strftime('%Y%m%d')), 0).otherwise(f.col("weighted_net_spend_amt")))
 
   #Sum up spending at deparment/daily/household level to see spending over time at department level
   h_department = h_trans.\
-    groupby("department", "date", "ehhn").\
+    groupby("micro_department", "date", "ehhn").\
     agg(
       f.sum("net_spend_amt").alias("dollars_spent"),
       f.sum("weighted_net_spend_amt").alias("weighted_dollars_spent"),
@@ -176,42 +181,10 @@ for h in list(h_dates.keys()):
 
   #Write-out
   output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + h + "/"
-  fp = output_dir + "{}_department_spending".format(h)
+  fp = output_dir + "{}_microdepartment_spending".format(h)
   h_department.write.mode("overwrite").format("delta").save(fp)
   fp = output_dir + "{}_daily_spending".format(h)
   h_daily.write.mode("overwrite").format("delta").save(fp)
   fp = output_dir + "{}_ehhn_spending".format(h)
   h_ehhns.write.mode("overwrite").format("delta").save(fp)
   del(h_department, h_daily, h_ehhns)
-
-# COMMAND ----------
-
-#Get cut-offs for 33rd & 66th percentiles
-
-#Get cut-off when using k = 2 clustering
-
-#Plot dollars_spent distribution with percentiles cut-offs (red) and also
-#clustering cut-offs (blue). Make sure to include household counts.
-
-#These time, create two more visuals.
-#One distribution plot - plot distribution of dollars spent broken out by
-#L, M, H assignment. Make sure to include household counts.
-
-#Second distribution plot - plot distribution of dollars spent broken out by
-#cluster assignment. Make sure to include household counts.
-
-#Violin or box-whisker plot over time
-
-#Then do it again, but isolate at the department level.
-
-#Get sizing
-
-#Get spending at ehhn level looking across 4 weeks back
-#Give equal weighing of 1 for temporal component
-#Give equal weighing of 1 for seasonal component
-#Get distribution of raw spending across time for now
-
-#Design function that pulls ehhn baskets, calculates top spending UPCs, goes through display_upcs(),
-#And then outputs images of top 25 bought UPCs
-
-
