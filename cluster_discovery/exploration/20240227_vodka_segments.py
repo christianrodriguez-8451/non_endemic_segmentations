@@ -1065,4 +1065,5 @@ final_output.display()
 
 # COMMAND ----------
 
-
+out_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/flavored_vodka_poc'
+final_output.write.mode('overwrite').parquet(out_path)

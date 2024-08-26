@@ -31,14 +31,17 @@ from lib import config, utils
 # COMMAND ----------
 
 # Parameters
-unique_id = 'HDBSCAN_0.5_5_UMAP_0_10_5'
+# unique_id = 'kmeans_UMAP_0.5_50_100'
+unique_id = 'kmeans_UMAP_0.1_50_100'
 max_num_items = 1000
 
-cluster_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/clustering_artifacts'
-upc_path = '/dbfs/FileStore/Users/p870220/non_endemic_cluster_testing/upc_list.pkl'
+base_path = '/FileStore/Users/p870220/non_endemic_cluster_testing_c2v_res'
+
+cluster_path = f'dbfs:{base_path}/clustering_artifacts'
+upc_path = f'/dbfs{base_path}/upc_list.pkl'
 pim_path = "abfss://pim@sa8451posprd.dfs.core.windows.net/pim_core/by_cycle/cycle_date=20240113"
 pinto_path = 'abfss://data@sa8451entlakegrnprd.dfs.core.windows.net/source/third_party/prd/pinto/pinto_effo_kroger_export_20240114'
-out_path = 'dbfs:/FileStore/Users/p870220/non_endemic_cluster_testing/cluster_views'
+out_path = f'dbfs:{base_path}/cluster_views'
 
 # COMMAND ----------
 
@@ -267,75 +270,255 @@ for name, df in asset_names.items():
 
 # COMMAND ----------
 
+(
+    products_aug
+    .groupBy('group')
+    .count()
+    .display()
+)
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 4. Cluster Hierarchy
 
 # COMMAND ----------
 
-hierarchy = ['fyt_pmy_dpt_cct_dsc_tx', 'fyt_rec_dpt_cct_dsc_tx', 'fyt_sub_dpt_cct_dsc_tx', 'fyt_com_cct_dsc_tx', 'fyt_sub_com_cct_dsc_tx']
-conds = [f.when(f.col(f'left.{col_name}') == f.col(f'right.{col_name}'), i+1)
-         for i, col_name in enumerate(reversed(hierarchy))]
-full_cond = reduce(lambda a, b: b.otherwise(a), reversed(conds), len(hierarchy)+1)
-
-def exhaustive_pairwise_distance(upc_df):
-    avg_dist = (
-        upc_df.alias('left')
-        .crossJoin(upc_df.alias('right'))
-        .withColumn('pairwise_dist', full_cond)
-        .agg(f.mean(f.col('pairwise_dist')).alias('avg_distance'),
-             f.stddev(f.col('pairwise_dist')).alias('std_distance'))
-    )
-    return avg_dist
+products_aug.limit(20).display()
 
 # COMMAND ----------
 
-unrestricted_rows = []
-light_rows = []
-heavy_rows = []
+sample_pdf = products_aug.filter(f.col('group') == 10).toPandas()
+sample_pdf
 
-cluster_rows = ['group'] + [col for col in prods_grouping_df.columns if 'num_' in col]
-out_rows = ['avg_distance', 'std_distance']
+# COMMAND ----------
 
-for row in prods_grouping_df.filter(f.col('num_upcs') <= max_num_items).collect():
-    print(f'--- Cluster {row.group} ---')
+# for i, row in sample_pdf.iterrows():
+#     print(row)
+#     break
 
-    d_unrestricted = exhaustive_pairwise_distance(
-        products_aug.filter(f.col('group') == row.group)
-    ).first()
-    print(f'Unrestricted: {d_unrestricted}')
-    d_light = exhaustive_pairwise_distance(
-        light_purge.filter(f.col('group') == row.group)
-    ).first()
-    print(f'Light: {d_light}')
-    d_heavy = exhaustive_pairwise_distance(
-        heavy_purge.filter(f.col('group') == row.group)
-    ).first()
-    print(f'Heavy: {d_heavy}')
+# COMMAND ----------
 
-    unrestricted_rows.append((
-        *[getattr(row, col) for col in cluster_rows],
-        *[getattr(d_unrestricted, col) for col in out_rows]
-    ))
-    light_rows.append((
-        *[getattr(row, col) for col in cluster_rows],
-        *[getattr(d_light, col) for col in out_rows]
-    ))
-    heavy_rows.append((
-        *[getattr(row, col) for col in cluster_rows],
-        *[getattr(d_heavy, col) for col in out_rows]
-    ))
+# sample_pdf.iloc[1]
 
-out_unrestricted = spark.createDataFrame(
-    unrestricted_rows, 
-    schema=cluster_rows+out_rows
+# COMMAND ----------
+
+# pdf_score(sample_pdf)
+
+# COMMAND ----------
+
+# import random
+
+# random.randint(0, 1)
+
+# COMMAND ----------
+
+# dir(random)
+
+# COMMAND ----------
+
+# help(sample_pdf.sample)
+
+# COMMAND ----------
+
+# series_score(sample_pdf.sample().squeeze(), sample_pdf.sample().squeeze())
+
+# COMMAND ----------
+
+# import random
+
+# def sample_pdf_score(pdf, n):
+#     # Initialize values
+#     s0 = s1 = s2 = 0
+
+#     # Compute pairwise scores
+#     for _ in range(n):
+#         score = series_score(
+#             pdf.sample().squeeze(),
+#             pdf.sample().squeeze(),
+#         )
+#         s0 += 1
+#         s1 += score
+#         s2 += score*score
+
+#     # Extract mean and std
+#     mean = s1 / s0
+#     std = ((s0 * s2 - s1 * s1)/(s0 * (s0 - 1))) ** 2
+
+#     # Convert to PDF
+#     out_pdf = pd.DataFrame({
+#         'group': pdf.loc[0, 'group'], 
+#         'mean_dist': [mean], 
+#         'std_dist': [std],
+#         'num_samples': [n],
+#     })
+
+#     # Con
+#     return out_pdf
+
+# sample_pdf_score(products_aug.filter(f.col('group') == 2).toPandas(), 10000)
+
+# COMMAND ----------
+
+import pandas as pd
+import pyspark.sql.types as t
+import random
+
+hierarchy = ['fyt_pmy_dpt_cct_dsc_tx', 'fyt_rec_dpt_cct_dsc_tx', 'fyt_sub_dpt_cct_dsc_tx', 'fyt_com_cct_dsc_tx', 'fyt_sub_com_cct_dsc_tx']
+
+def series_score(row1, row2):
+    # Compute pairwise score for two UPCs
+    for i, val in enumerate(reversed(hierarchy), start=1):
+        if row1[val] == row2[val]:
+            return i
+    return len(hierarchy) + 1
+
+score_schema = t.StructType([
+    t.StructField('group', t.IntegerType(), False),
+    t.StructField('mean_dist', t.DoubleType(), True),
+    t.StructField('std_dist', t.DoubleType(), True)
+])
+
+# @f.pandas_udf(score_schema, f.PandasUDFType.GROUPED_MAP)
+def pdf_score(pdf):
+    # Initialize values
+    s0 = s1 = s2 = 0
+
+    # Compute pairwise scores
+    for i in range(len(pdf)):
+        for j in range(i+1, len(pdf)):
+            score = series_score(pdf.loc[i], pdf.loc[j])
+            s0 += 1
+            s1 += score
+            s2 += score*score
+
+    # Extract mean and std
+    mean = s1 / s0
+    std = ((s0 * s2 - s1 * s1)/(s0 * (s0 - 1))) ** 2
+
+    # Convert to PDF
+    out_pdf = pd.DataFrame({'group': pdf.loc[0, 'group'], 'mean_dist': [mean], 'std_dist': [std]})
+
+    # Con
+    return out_pdf
+
+
+@f.pandas_udf(score_schema, f.PandasUDFType.GROUPED_MAP)
+def sample_pdf_score(pdf):
+    n = 10000
+
+    # Initialize values
+    s0 = s1 = s2 = 0
+
+    # Compute pairwise scores
+    for _ in range(n):
+        score = series_score(
+            pdf.sample().squeeze(),
+            pdf.sample().squeeze(),
+        )
+        s0 += 1
+        s1 += score
+        s2 += score*score
+
+    # Extract mean and std
+    mean = s1 / s0
+    std = ((s0 * s2 - s1 * s1)/(s0 * (s0 - 1))) ** 2
+
+    # Convert to PDF
+    out_pdf = pd.DataFrame({
+        'group': pdf.loc[0, 'group'], 
+        'mean_dist': [mean], 
+        'std_dist': [std],
+        # 'num_samples': [n],
+    })
+
+    # Con
+    return out_pdf
+
+
+(
+    products_aug
+    .groupBy('group')
+    .apply(sample_pdf_score)
+    .display()
 )
-out_light = spark.createDataFrame(
-    light_rows, 
-    schema=cluster_rows+out_rows
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# unrestricted_rows = []
+# light_rows = []
+# heavy_rows = []
+
+# cluster_rows = ['group'] + [col for col in prods_grouping_df.columns if 'num_' in col]
+# out_rows = ['avg_distance', 'std_distance']
+
+# for row in prods_grouping_df.filter(f.col('num_upcs') <= max_num_items).collect():
+#     print(f'--- Cluster {row.group} ---')
+
+#     d_unrestricted = exhaustive_pairwise_distance(
+#         products_aug.filter(f.col('group') == row.group)
+#     ).first()
+#     print(f'Unrestricted: {d_unrestricted}')
+#     d_light = exhaustive_pairwise_distance(
+#         light_purge.filter(f.col('group') == row.group)
+#     ).first()
+#     print(f'Light: {d_light}')
+#     d_heavy = exhaustive_pairwise_distance(
+#         heavy_purge.filter(f.col('group') == row.group)
+#     ).first()
+#     print(f'Heavy: {d_heavy}')
+
+#     unrestricted_rows.append((
+#         *[getattr(row, col) for col in cluster_rows],
+#         *[getattr(d_unrestricted, col) for col in out_rows]
+#     ))
+#     light_rows.append((
+#         *[getattr(row, col) for col in cluster_rows],
+#         *[getattr(d_light, col) for col in out_rows]
+#     ))
+#     heavy_rows.append((
+#         *[getattr(row, col) for col in cluster_rows],
+#         *[getattr(d_heavy, col) for col in out_rows]
+#     ))
+
+# out_unrestricted = spark.createDataFrame(
+#     unrestricted_rows, 
+#     schema=cluster_rows+out_rows
+# )
+# out_light = spark.createDataFrame(
+#     light_rows, 
+#     schema=cluster_rows+out_rows
+# )
+# out_heavy = spark.createDataFrame(
+#     heavy_rows, 
+#     schema=cluster_rows+out_rows
+# )
+
+# COMMAND ----------
+
+out_unrestricted = (
+    products_aug
+    .groupBy('group')
+    .apply(sample_pdf_score)
+    .join(prods_grouping_df, on='group', how='inner')
 )
-out_heavy = spark.createDataFrame(
-    heavy_rows, 
-    schema=cluster_rows+out_rows
+
+out_light = (
+    light_purge
+    .groupBy('group')
+    .apply(sample_pdf_score)
+    .join(prods_grouping_df, on='group', how='inner')
+)
+
+out_heavy = (
+    heavy_purge
+    .groupBy('group')
+    .apply(sample_pdf_score)
+    .join(prods_grouping_df, on='group', how='inner')
 )
 
 # COMMAND ----------
@@ -348,3 +531,7 @@ asset_names = {
 
 for name, df in asset_names.items():
     df.write.mode('overwrite').parquet(f'{out_path}/{name}_pairwise')
+
+# COMMAND ----------
+
+
