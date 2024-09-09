@@ -324,11 +324,21 @@ h_scomms.show(10, truncate=False)
 # COMMAND ----------
 
 h_dates = {
+  "super_bowl": "20230212",
+  "valentines_day": "20230214",
+  "st_patricks_day": "20230317",
+  "easter": "20230409",
   "may_5th": "20230505",
   "mothers_day": "20230514",
   "memorial_day": "20230529",
   "fathers_day": "20230618",
   "july_4th": "20230704",
+  "back_to_school": "20230819",
+  "labor_day": "20230904",
+  "halloween": "20231031",
+  "thanksgiving": "20231123",
+  "christmas_eve": "20231224",
+  "new_years_eve": "20231231",
 }
 h_enddate = h_dates[audience]
 h_enddate = datetime.strptime(h_enddate, '%Y%m%d')
@@ -361,9 +371,9 @@ ehhn_df = spark.read.format("delta").load(ehhn_fp)
 ehhn_df = ehhn_df.join(gcard_ehhns, "ehhn", "left")
 ehhn_df = ehhn_df.fillna({"bought_greeting_card": "No"})
 
-#ehhn_df = ehhn_df.limit(10000)
-#dept_df = dept_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
-#daily_df = daily_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
+ehhn_df = ehhn_df.limit(10000)
+dept_df = dept_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
+daily_df = daily_df.join(ehhn_df.select("ehhn"), "ehhn", "inner")
 
 ehhn_df.cache()
 dept_df.cache()
@@ -740,3 +750,112 @@ def daily_bw_plot(vis, df, label):
   #dates = pandas_df["date"]
   #vis.set_xticks(dates)
   #plt.setp(vis.get_xticklabels(), rotation=45, ha="right")
+
+# COMMAND ----------
+
+def daily_bw_plot(vis, df, label):
+# Aggregate data
+  aggregated_df = df.\
+    groupBy("date").\
+    agg(f.collect_list("dollars_spent").alias("dollars_spent_list"))
+  #Convert to Pandas DataFrame
+  pandas_df = aggregated_df.toPandas()
+  pandas_df = pandas_df.sort_values(by=["date"], ascending=True)
+  pandas_df = pandas_df.reset_index(drop=True)
+  #Explode the list column to separate rows
+  exploded_df = pandas_df.explode('dollars_spent_list')
+  #Rename columns for clarity
+  exploded_df.columns = ['date', 'dollars_spent']
+  #Formate the date column for readability
+  exploded_df['date'] = exploded_df.astype(str)
+  exploded_df['date'] = exploded_df['date'].apply(lambda x: f"{x[:4]}-{x[4:6]}-{x[6:]}")
+
+  #Create the box-and-whiskers plot
+  sns.boxplot(
+    x='date', y='dollars_spent', data=exploded_df, showfliers=False,
+    boxprops=dict(color='black', facecolor='white'),
+    whiskerprops=dict(color='black'),
+    capprops=dict(color='black'),
+    medianprops=dict(color='black'),
+    flierprops=dict(markerfacecolor='black', markeredgecolor='black'),
+  )
+  vis.set_title('Box-and-Whiskers Plot of Dollars Spent Across Time ({})'.format(label))
+  vis.set_xlabel('Date')
+  vis.set_ylabel('Dollars Spent')
+  vis.set_xticklabels(vis.get_xticklabels(), rotation=60)
+
+def daily_count_plot(vis, df, label):
+# Aggregate data
+  aggregated_df = df.\
+    groupBy("date").\
+    agg(f.countDistinct("ehhn").alias("ehhn_count"))
+  #Convert to Pandas DataFrame
+  pandas_df = aggregated_df.toPandas()
+  pandas_df = pandas_df.sort_values(by=["date"], ascending=True)
+  pandas_df = pandas_df.reset_index(drop=True)
+  #Rename columns for clarity
+  #exploded_df.columns = ['date', 'dollars_spent']
+  #Formate the date column for readability
+  pandas_df['date'] = pandas_df.astype(str)
+  pandas_df['date'] = pandas_df['date'].apply(lambda x: f"{x[:4]}-{x[4:6]}-{x[6:]}")
+
+  #Create the box-and-whiskers plot
+  sns.lineplot(x='date', y='ehhn_count', data=pandas_df, marker="o")
+
+  vis.set_title('EHHN Count Across Time ({})'.format(label))
+  vis.set_xlabel('Date')
+  vis.set_xticks(vis.get_xticks())
+  vis.set_xticklabels(vis.get_xticklabels(), rotation=60)
+  vis.set_ylabel('EHHN Count')
+ 
+def seasonal_plots(daily_df, dept_df, fig):
+  """
+  """
+  #Get all unique departments in dataset
+  departments = dept_df.select("micro_department").dropDuplicates().collect()
+  departments = [x["micro_department"] for x in departments]
+
+  #There are plots for the overall level + each microdepartment
+  #There are two plots for each - box-and-whiskers plot + scatter plot
+  n_subplots = int((1 + len(departments))*2)
+  #Plot the initial box-and-whisker plot. The overall spending plot.
+  index = 1
+  vis1 = fig.add_subplot(n_subplots, 1, index)
+  daily_bw_plot(vis=vis1, df=daily_df, label="OVERALL")
+  #Plot the initial scatter plot. The overall ehhn count plot.
+  index += 1
+  vis2 = fig.add_subplot(n_subplots, 1, index)
+  daily_count_plot(vis=vis2, df=daily_df, label="OVERALL")
+
+  #Plot the box-and-whisker on spending for the rest of the departments
+  for dept in departments:
+    temp = dept_df.filter(f.col("micro_department") == dept)
+
+    index += 1
+    visi = fig.add_subplot(n_subplots, 1, index)
+    daily_bw_plot(vis=visi, df=temp, label=dept)
+
+    index += 1
+    visj = fig.add_subplot(n_subplots, 1, index)
+    daily_count_plot(vis=visj, df=temp, label=dept)
+
+# COMMAND ----------
+
+#Will hand over to Sales + friends: commodities, sub-commodities chosen,
+#Spending plots + ehhn counts per department + overall
+#Get all unique departments in dataset
+departments = dept_df.select("micro_department").dropDuplicates().collect()
+departments = [x["micro_department"] for x in departments]
+fig1 = plt.figure(figsize=(15, 20*len(departments)))
+#Visualize spending-across-time at overall and department levels
+seasonal_plots(daily_df=daily_df, dept_df=dept_df, fig=fig1)
+
+#Adjust layout and save figure to specified PDF
+plt.subplots_adjust(hspace=0.5)
+#plt.tight_layout()
+#pdf.savefig(fig1)
+#plt.show()
+
+# COMMAND ----------
+
+
