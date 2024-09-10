@@ -94,21 +94,21 @@ acds.show(truncate=False)
 
 #Define holiday dates
 h_dates = {
-  "super_bowl": "20230212",
-  "valentines_day": "20230214",
-  "st_patricks_day": "20230317",
-  "easter": "20230409",
-  "may_5th": "20230505",
-  "mothers_day": "20230514",
-  "memorial_day": "20230529",
-  "fathers_day": "20230618",
-  "july_4th": "20230704",
-  "back_to_school": "20230819",
-  "labor_day": "20230904",
-  "halloween": "20231031",
-  "thanksgiving": "20231123",
-  "christmas_eve": "20231224",
-  "new_years_eve": "20231231",
+  #"super_bowl": "20230212", #Done
+  #"valentines_day": "20230214", #Done
+  #"st_patricks_day": "20230317", #Done
+  "easter": "20230409", #Note done yet!!!
+  #"may_5th": "20230505", #Done
+  #"mothers_day": "20230514", #Done
+  #"memorial_day": "20230529", #Done
+  #"fathers_day": "20230618", #Done
+  #"july_4th": "20230704", #Done
+  "back_to_school": "20230819", #Done???
+  #"labor_day": "20230904", #Done
+  #"halloween": "20231031", #Done
+  "thanksgiving": "20231123", #Done???
+  #"christmas_eve": "20231224", #Done
+  #"new_years_eve": "20231231", #Done
 }
 
 #For each holiday, get distribution of spending on the day level. Pull 30 days of spending for each holiday.
