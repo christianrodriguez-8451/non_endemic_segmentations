@@ -214,12 +214,6 @@ offsite_cols = [
   'CBA_ELIGIBLE_FLAG',
 ]
 
-#Create eligibility flags if they have "Y" in any of their designated columns
-#eligibility = eligibility.withColumn(
-#    "overall_eligibility", 
-#    f.when(f.expr(f"array_contains(array({','.join(overall_cols)}), 'Y')"), 1).otherwise(0)
-#)
-
 #Onsite eligible households
 eligibility = eligibility.withColumn(
     "onsite_eligibility", 
@@ -235,16 +229,6 @@ eligibility = eligibility.withColumn(
 )
 offsite = eligibility.filter(f.col("offsite_eligibility") == 1)
 offsite = offsite.select("ehhn", "offsite_eligibility").dropDuplicates()
-
-#Function to check if any column contains 'Y'
-#def any_column_contains_Y(*args):
-#    return 'Y' in args
-# Register UDF
-#contains_Y_udf = udf(any_column_contains_Y, t.BooleanType())
-# Apply UDF to create new columns
-#acds = acds.withColumn("overall_eligibility", contains_Y_udf(*[f.col(column) for column in overall_cols]))
-#acds = acds.withColumn("onsite_eligibility", contains_Y_udf(*[f.col(column) for column in onsite_cols]))
-#acds = acds.withColumn("offsite_eligibility", contains_Y_udf(*[f.col(column) for column in offsite_cols]))
 #####################################################################
 
 acds = acds.join(onsite, "ehhn", "left")
@@ -315,56 +299,11 @@ sub_commodity.cache()
 
 # COMMAND ----------
 
-import os
-
-def write_out(df, fp, delim=",", fmt="csv"):
-  """Writes out PySpark dataframe as a csv file
-  that can be downloaded for Azure and loaded into
-  Excel very easily.
-
-  Example
-  ----------
-    write_out(df, "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/data_analysis.csv")
-
-  Parameters
-  ----------
-  df: pyspark.sql.dataframe.DataFrame
-    PySpark dataframe contains the data we'd like
-    to conduct the group-by count on.
-
-  fp: str
-    String that the defines the column name of the 
-    column of interest.
-
-  delim: str
-    String that specifies which delimiter to use in the
-    write-out. Default value is ','.
-
-  fmt: str
-    String that specifies which format to use in the
-    write-out. Default value is 'csv'.
-
-  Returns
-  ----------
-  None. File is written out specified Azure location.
-  """
-  #Placeholder filepath for intermediate processing
-  temp_target = os.path.dirname(fp) + "/" + "temp"
-
-  #Write out df as partitioned file. Write out ^ delimited
-  df.coalesce(1).write.options(header=True, delimiter=delim).mode("overwrite").format(fmt).save(temp_target)
-
-  #Copy desired file from parititioned directory to desired location
-  temporary_fp = os.path.join(temp_target, dbutils.fs.ls(temp_target)[3][1])
-  dbutils.fs.cp(temporary_fp, fp)
-  dbutils.fs.rm(temp_target, recurse=True)
-
 fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/powerbi_inputs/product_hierarchy_stats/product_hierarchy"
 hier.write.mode("overwrite").format("parquet").save(fp)
-#write_out(hier, fp, delim="^")
+
 fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/powerbi_inputs/product_hierarchy_stats/commodity_breakdown"
 commodity.write.mode("overwrite").format("parquet").save(fp)
-#write_out(commodity, fp, delim="^")
+
 fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/powerbi_inputs/product_hierarchy_stats/subcommodity_breakdown"
 sub_commodity.write.mode("overwrite").format("parquet").save(fp)
-#write_out(sub_commodity, fp, delim="^")
