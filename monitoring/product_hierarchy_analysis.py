@@ -27,6 +27,23 @@ and output the commmodity + sub-commmodity breakdowns.
 
 # COMMAND ----------
 
+#When you use a job to run your notebook, you will need the service principles
+#You only need to define what storage accounts you are using
+
+#Define service principals
+service_credential = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-pw')
+service_application_id = dbutils.secrets.get(scope='kv-8451-tm-media-dev',key='spTmMediaDev-app-id')
+directory_id = "5f9dc6bd-f38a-454a-864c-c803691193c5"
+#storage_account = 'sa8451dbxadhocprd'
+storage_account = 'sa8451posprd'
+
+#Set configurations
+spark.conf.set(f"fs.azure.account.auth.type.{storage_account}.dfs.core.windows.net", "OAuth")
+spark.conf.set(f"fs.azure.account.oauth.provider.type.{storage_account}.dfs.core.windows.net", "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")
+spark.conf.set(f"fs.azure.account.oauth2.client.id.{storage_account}.dfs.core.windows.net", service_application_id)
+spark.conf.set(f"fs.azure.account.oauth2.client.secret.{storage_account}.dfs.core.windows.net", service_credential)
+spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{storage_account}.dfs.core.windows.net", f"https://login.microsoftonline.com/{directory_id}/oauth2/token")
+
 #Packages Used
 import pandas as pd
 import pyspark.sql.functions as f
@@ -38,6 +55,8 @@ import datetime as dt
 import resources.config as config
 from effodata import ACDS, golden_rules, Joiner, Sifter, Equality, join_on 
 from kpi_metrics import KPI, AliasMetric, CustomMetric, AliasGroupby
+
+# COMMAND ----------
 
 #Read in PIM
 pim_fp = config.get_latest_modified_directory(config.azure_pim_core_by_cycle)

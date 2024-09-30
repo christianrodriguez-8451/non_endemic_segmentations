@@ -714,6 +714,54 @@ regex_segmentations = {
     "must_contain": [["dunkel"]],
     "composes": "lager",
   },
+  "cabernet": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["cabernet", "cab"]],
+  },
+  "pinot_noir": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["pinot", "pin"], ["noir"]],
+  },
+  "merlot": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["merlot", "merl"]],
+  },
+  "malbec": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["malbec", "malb"]],
+  },
+  "port": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["port", "prt"]],
+  },
+  "riesling": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["riesling", "ries", "rie"]],
+  },
+  "moscato": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["moscato", "mosc"]],
+  },
+  "white_zinfandel": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["white", "whte", "wht", "whi"], ["zinfandel", "zin"]],
+  },
+  "sauvignon_blanc": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["sauvignon", "sauv"], ["blanc", "blan", "blc"]],
+  },
+  "chardonnay": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["chardonnay", "chard"]],
+  },
+  "pinot_grigio": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["pinot", "pin"], ["grigio", "grig"]],
+  },
+  "bordeaux": {
+    "filter": {"micro_department": ["WINE"]},
+    "must_contain": [["bordeaux"]],
+  },
 }
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
