@@ -830,6 +830,78 @@ audience_dict = {
     "propensity_compisition": ["H"],
     "tags": ["Food"],
   },
+  "cabernet": {
+    "frontend_name": "PLACEHOLDER FOR cabernet",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "pinot_noir": {
+    "frontend_name": "PLACEHOLDER FOR pinot_noir",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "merlot": {
+    "frontend_name": "PLACEHOLDER FOR merlot",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "malbec": {
+    "frontend_name": "PLACEHOLDER FOR malbec",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "port": {
+    "frontend_name": "PLACEHOLDER FOR port",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "riesling": {
+    "frontend_name": "PLACEHOLDER FOR riesling",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "moscato": {
+    "frontend_name": "PLACEHOLDER FOR moscato",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "white_zinfandel": {
+    "frontend_name": "PLACEHOLDER FOR white_zinfandel",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "sauvignon_blanc": {
+    "frontend_name": "PLACEHOLDER FOR sauvignon_blanc",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "chardonnay": {
+    "frontend_name": "PLACEHOLDER FOR chardonnay",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "pinot_grigio": {
+    "frontend_name": "PLACEHOLDER FOR pinot_grigio",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "bordeaux": {
+    "frontend_name": "PLACEHOLDER FOR bordeaux",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
 }
 
 #TODO: Make a class that groups the segmentations by how their UPC lists
