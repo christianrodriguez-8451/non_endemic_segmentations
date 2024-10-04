@@ -1,10 +1,10 @@
 # Databricks notebook source
 """
+This is the code used to identify the season households
+given the season's product list. Once you are happy with the
+final list, run this to product the household sets considered
+as the given audience.
 """
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 

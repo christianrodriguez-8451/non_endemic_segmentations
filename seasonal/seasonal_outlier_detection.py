@@ -1,4 +1,11 @@
 # Databricks notebook source
+"""
+This is the code used to create the commodity and
+sub-commodity lists that had seasonality scores.
+"""
+
+# COMMAND ----------
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import pyspark.sql.functions as f

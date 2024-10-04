@@ -1,4 +1,11 @@
 # Databricks notebook source
+"""
+This is the code used to create the inputs for
+seasonal_outllier_detection.py.
+"""
+
+# COMMAND ----------
+
 #Idea: Re-consider how far to look at data for (not just 3 day window)
 #Analyze when trips spike
 from pyspark.sql import SparkSession

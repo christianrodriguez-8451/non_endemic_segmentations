@@ -1,4 +1,13 @@
 # Databricks notebook source
+"""
+After the commodity + sub-commodity list has been
+drafted or reviewed, run this notebook to get spending
+at the micro-department/date/ehhn level, date/ehhn level,
+and at the ehhn level on the 31 days leading up to the season.
+"""
+
+# COMMAND ----------
+
 from pyspark.sql import SparkSession
 from datetime import datetime, timedelta
 import pyspark.sql.functions as f

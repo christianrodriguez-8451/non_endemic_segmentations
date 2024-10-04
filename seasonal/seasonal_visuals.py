@@ -1,4 +1,12 @@
 # Databricks notebook source
+"""
+This is the code used to generate the box-and-whiskers plots,
+ehhn counts plots, and commodity/sub-commodity appendix for the
+seasonal audiences.
+"""
+
+# COMMAND ----------
+
 # MAGIC %pip install protobuf==3.20.1
 
 # COMMAND ----------
