@@ -2,6 +2,33 @@
 """
 This is the code used to create the inputs for
 seasonal_outllier_detection.py.
+
+Pulls ACDS across a four year time span (12-29-2019 to 01-07-2024),
+creates a timeline at the weekl level, defines the seasonal date
+ranges for the past four years, and aggregate the transaction data
+at the weekly level. When the data is calculated at the weekly level,
+we groupby at the commodity level and then aggregate on net_spend_amt
+(dollars spent) and scn_unt_qy (units bought). We also calculate the same
+data at the sub-commodity level too. Four critical datasets
+are outputted:
+
+  1) seasonal_commodity_history := this is a delta file that contains
+  for each commodity dollars spent/units sold at the weekly level.
+  Used as an input in ***.
+
+  2) seasonal_subcommodity_history := same thing as #1, but at the
+  sub-commodity level. Used as an input in ***.
+
+  3) timeline := this is a delta file that contains which week each
+  date belongs in the timeline from 12-29-2019 to 01-07-2024.
+
+  4) holidays := this is a delta file that contains the defined timeframe 
+  for each season in each year (2020, 2021, 2022, 2023).
+
+The is the first step to run in the seasonal audience
+creation/update process. When this is updated to accomdate for the
+latest year of data, make sure to adjust the start_date_str and end_date_str
+variables to your desired range.
 """
 
 # COMMAND ----------
@@ -70,6 +97,11 @@ dates = dates.withColumn("year", f.when(conditions[0][0], conditions[0][1])
 )
 dates = dates.select("date", "week", "week_enddate", "year")
 dates = dates.orderBy("date")
+
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/"
+fn = "timeline"
+fp = my_dir + fn
+dates.write.mode("overwrite").format("delta").save(fp)
 dates.show(50, truncate=False)
 
 # COMMAND ----------
@@ -124,12 +156,12 @@ holidays = holidays.join(dates.select("date", "week"),
                          "date",
                          "inner")
 holidays = holidays.orderBy("holiday", "date")
-holidays.show(50, truncate=False)
 
 my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/"
 fn = "holidays"
 fp = my_dir + fn
 holidays.write.mode("overwrite").format("delta").save(fp)
+holidays.show(50, truncate=False)
 
 # COMMAND ----------
 
@@ -178,7 +210,12 @@ comm_hist = acds.\
   agg(f.sum("net_spend_amt").alias("dollars_spent"),
       f.sum("scn_unt_qy").alias("units_sold"))
 comm_hist = comm_hist.orderBy(['commodity', 'week'])
+
+fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + "seasonal_commodity_history"
+comm_hist.write.mode("overwrite").format("delta").save(fp)
 comm_hist.show(50, truncate=False)
+
+# COMMAND ----------
 
 #Create sub-commodity history by calculating dollars spent and dollar share per week.
 subcomm_hist = acds.\
@@ -186,208 +223,7 @@ subcomm_hist = acds.\
   agg(f.sum("net_spend_amt").alias("dollars_spent"),
       f.sum("scn_unt_qy").alias("units_sold"))
 subcomm_hist = subcomm_hist.orderBy(['commodity', 'sub_commodity', 'week'])
-subcomm_hist.show(50, truncate=False)
 
-fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + "seasonal_commodity_history"
-comm_hist.write.mode("overwrite").format("delta").save(fp)
 fp = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + "seasonal_subcommodity_history"
 subcomm_hist.write.mode("overwrite").format("delta").save(fp)
-
-# COMMAND ----------
-
-#This chunk is very important! It creates weekly history for all
-#sub-commodities for 2020, 2021, 2022, and 2023.
-#Each week contains: dollars spent on sub-commodities,
-#total dollars spent on all sub-commodities, and
-#rank of dollar share. In a way, each sub-commodity has their
-#own time series. May be able to fit an outlier detection system
-#on sub-commodity history.
-
-#Create sub-commodity history by calculating dollars spent and dollar share per week.
-subcomm_hist = acds.groupby("sub_commodity", "week").agg(f.sum("net_spend_amt").alias("dollars_spent"))
-total_hist = subcomm_hist.groupby("week").agg(f.sum("dollars_spent").alias("total_dollars_spent"))
-subcomm_hist = subcomm_hist.join(total_hist, "week", "inner")
-subcomm_hist = subcomm_hist.orderBy(['sub_commodity', 'week'])
-subcomm_hist = subcomm_hist.withColumn('dollar_share', subcomm_hist['dollars_spent'] / subcomm_hist['total_dollars_spent'])
-
-#Rank each subcommodity an assortment rank within each week.
-#The rank is based on dollar share at the given week.
-window_spec = Window().partitionBy('week').orderBy(f.desc('dollar_share'))
-subcomm_hist = subcomm_hist.withColumn('share_rank', f.rank().over(window_spec))
-subcomm_hist.cache()
-
-subcomm_hist = subcomm_hist.orderBy(['week', 'share_rank'])
-subcomm_hist.show(25, truncate=False)
-
-# COMMAND ----------
-
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/"
-
-fn = "timeline"
-fp = my_dir + fn
-dates.write.mode("overwrite").format("delta").save(fp)
-
-fn = "holidays"
-fp = my_dir + fn
-holidays.write.mode("overwrite").format("delta").save(fp)
-
-fn = "raw_weekly_history"
-fp = my_dir + fn
-subcomm_hist.write.mode("overwrite").format("delta").save(fp)
-
-# COMMAND ----------
-
-#Write out: dates, holidays, subcomm_hist
-
-#Next:
-#Take data and calculate dollars_spent, total_dollars_spent, dollar_share, and share_rank in x week rolling basis.
-#Do for: 4 week rolling, 13 week rolling, 26 week rolling, 52 week rolling
-#Write each out as separate datasets. Merge them together and write-out in another script.
-
-#In another script, take final history data and do clustering on the isolated
-#holiday occurences. In each occurence, take the cluster with the average
-#higher shift in share ranks.
-
-#Want holiday occurences for: 2021, 2022, 2023
-
-# COMMAND ----------
-
-#Start of Emily Singer's methodology
-
-#Create sub-commodity history by calculating dollars spent and dollar share per year.
-subcomm_annual_hist = acds.groupby("sub_commodity", "year").agg(f.sum("net_spend_amt").alias("dollars_spent"))
-total_annual_hist = subcomm_annual_hist.groupby("year").agg(f.sum("dollars_spent").alias("total_dollars_spent"))
-subcomm_annual_hist = subcomm_annual_hist.join(total_annual_hist, "year", "inner")
-subcomm_annual_hist = subcomm_annual_hist.orderBy(['sub_commodity', 'year'])
-subcomm_annual_hist = subcomm_annual_hist.withColumn('dollar_share', subcomm_annual_hist['dollars_spent'] / subcomm_annual_hist['total_dollars_spent'])
-
-#Rank each subcommodity an assortment rank within each year.
-#The rank is based on dollar share at the given year.
-window_spec = Window().partitionBy('year').orderBy(f.desc('dollar_share'))
-subcomm_annual_hist = subcomm_annual_hist.withColumn('share_rank', f.rank().over(window_spec))
-subcomm_annual_hist.cache()
-
-subcomm_annual_hist = subcomm_annual_hist.orderBy(['year', 'share_rank'])
-subcomm_annual_hist.show(25, truncate=False)
-
-# COMMAND ----------
-
-subcomm_annual_hist.filter(f.col("year") == 2020).show(50, truncate=False)
-
-# COMMAND ----------
-
-subcomm_annual_hist.filter(f.col("year") == 2021).show(50, truncate=False)
-
-# COMMAND ----------
-
-subcomm_annual_hist.filter(f.col("year") == 2022).show(50, truncate=False)
-
-# COMMAND ----------
-
-subcomm_annual_hist.filter(f.col("year") == 2023).show(50, truncate=False)
-
-# COMMAND ----------
-
-#Get top 500 sub-commodities at weekly and annual level
-top_500_w = subcomm_hist.filter(f.col("share_rank") <= 500)
-top_500_a = subcomm_annual_hist.filter(f.col("share_rank") <= 500)
-
-#Assign year to weekly ranks to compare to appropiate annual ranks
-conditions = [
-    (f.col("week").between("0", "51"), "2020"),
-    (f.col("week").between("52", "104"), "2021"),
-    (f.col("week").between("105", "156"), "2022"),
-    (f.col("week").between("157", "209"), "2023"),
-    (f.col("week").between("210", "262"), "2024"),
-]
-top_500_w = top_500_w.withColumn("year", f.when(conditions[0][0], conditions[0][1])
-                                          .when(conditions[1][0], conditions[1][1])
-                                          .when(conditions[2][0], conditions[2][1])
-                                          .when(conditions[3][0], conditions[3][1])
-                                          .when(conditions[4][0], conditions[4][1]))
-top_500_a = top_500_a.withColumnRenamed("share_rank", "annual_share_rank",)
-top_500_w = top_500_w.join(top_500_a.select("year", "sub_commodity", "annual_share_rank"),
-                           ["year", "sub_commodity"],
-                           "left")
-top_500_w = top_500_w.withColumn("share_rank_diff", f.col("annual_share_rank") - f.col("share_rank"))
-#Assign holidays to the weeks
-top_500_w = top_500_w.join(holidays.select("week", "holiday_flag", "holiday").dropDuplicates(),
-                            "week",
-                            "left")
-top_500_w = top_500_w.fillna(0, subset="holiday_flag")
-#Pull any sub-commodity that is new to top 500 (week vs annual) or moves up more than 10 ranks
-conditions = (
-  ((f.col("share_rank_diff") >= 10) | (f.col("annual_share_rank").isNull()))
-  & (f.col("holiday_flag") == 1)
-)
-holiday_subcomms = top_500_w.filter(conditions)
-holiday_subcomms.cache()
-
-holiday_subcomms.show(50, truncate=False)
-
-# COMMAND ----------
-
-temp = holiday_subcomms.select("week", "year", "holiday", "sub_commodity", "share_rank", "annual_share_rank", "share_rank_diff")
-#temp = temp.filter(f.col("holiday") == "july_4th")
-temp = temp.orderBy(["holiday", "share_rank_diff"])
-temp.show(50, truncate=False)
-
-# COMMAND ----------
-
-import os
-
-temp_target = os.path.dirname(fps[0])
-temp_target
-
-# COMMAND ----------
-
-import os
-
-#def write_out(df, fp, delimiter="^", format="csv"):
-#Placeholder filepath for intermediate processing
-temp_target = os.path.dirname(fp)
-real_target = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + "holiday_subcommodities"
-
-#Write out df as partitioned file. Write out ^ delimited
-output_df = temp
-output_df.coalesce(1).write.options(header=True, delimiter="^").mode("overwrite").format('csv').save(temp_target)
-
-#Copy desired file from parititioned directory to desired location
-temporary_fp = os.path.join(temp_target, dbutils.fs.ls(temp_target)[3][1])
-print(temporary_fp)
-dbutils.fs.cp(temporary_fp, real_target)
-dbutils.fs.rm(temp_target, recurse=True)
-
-# COMMAND ----------
-
-subcomm_hist = subcomm_hist.join(dates.select("week", "week_enddate").dropDuplicates(),
-                                 "week",
-                                 "inner")
-subcomm_hist = subcomm_hist.join(holidays.select("week", "holiday_flag").dropDuplicates(),
-                                 "week",
-                                 "left")
-subcomm_hist = subcomm_hist.fillna(0, subset="holiday_flag")
-
-#Round to 2 sig figs for easy readability and make import to Excel easy
-subcomm_hist = subcomm_hist.withColumn(
-    "dollar_share",
-    f.round(f.col("dollar_share") * 100, 2)
-)
-subcomm_hist = subcomm_hist.withColumn(
-    "dollars_spent",
-    f.round(f.col("dollars_spent"), 2)
-)
-subcomm_hist = subcomm_hist.withColumn(
-    "total_dollars_spent",
-    f.round(f.col("dollars_spent"), 2)
-)
-
-#Change column order for readability
-subcomm_hist = subcomm_hist.select(
-  "year", "week", "holiday_flag", "week_enddate",
-  "sub_commodity", "share_rank",
-  "dollars_spent", "total_dollars_spent", "dollar_share",
-)
-#One way to order the data: top x sub-commodities per week
-subcomm_hist = subcomm_hist.orderBy(['week', 'share_rank'])
 subcomm_hist.show(50, truncate=False)
