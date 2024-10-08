@@ -393,8 +393,8 @@ commodity_segmentations = {
 }
 sensitive_segmentations = {
   "scotch": {
-    "commodities": ["SCOTCH"],
-    "sub_commodities": [],
+    "commodities": [],
+    "sub_commodities": ["BLENDED SCOTCH", "BLENDED SCOTCH (42 UNDER PROOF)", "IRISH WHISKEY", "SINGLE MALT"],
     "weeks": 26
   },
   "vodka": {
