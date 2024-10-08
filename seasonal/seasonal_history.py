@@ -1,7 +1,7 @@
 # Databricks notebook source
 """
 This is the code used to create the inputs for
-seasonal_outllier_detection.py.
+seasonal_outlier_detection.py.
 
 Pulls ACDS across a four year time span (12-29-2019 to 01-07-2024),
 creates a timeline at the weekl level, defines the seasonal date

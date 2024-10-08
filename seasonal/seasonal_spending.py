@@ -4,6 +4,8 @@ After the commodity + sub-commodity list has been
 drafted or reviewed, run this notebook to get spending
 at the micro-department/date/ehhn level, date/ehhn level,
 and at the ehhn level on the 31 days leading up to the season.
+
+
 """
 
 # COMMAND ----------
@@ -89,7 +91,6 @@ start_date = datetime.strptime(start_date_str, '%Y%m%d')
 end_date = datetime.strptime(end_date_str, '%Y%m%d')
 
 #Pull in transaction data from 2023-01-02 to 2024-01-02
-#Pull in transaction data and keep only ehhn, gtin_no, and dollars_spent
 acds = ACDS(use_sample_mart=False)
 acds = acds.get_transactions(start_date, end_date, apply_golden_rules=golden_rules(['customer_exclusions']))
 acds = acds.select("ehhn", "gtin_no", "net_spend_amt", "scn_unt_qy", f.col("trn_dt").alias("date"))
@@ -97,7 +98,7 @@ acds = acds.select("ehhn", "gtin_no", "net_spend_amt", "scn_unt_qy", f.col("trn_
 acds = acds.filter(f.col("net_spend_amt") > 0)
 acds.cache()
 
-acds.show(truncate=False)
+acds.show(50, truncate=False)
 
 # COMMAND ----------
 
@@ -120,15 +121,16 @@ h_dates = {
   "new_years_eve": "20231231",
 }
 
-#For each holiday, get distribution of spending on the day level. Pull 30 days of spending for each holiday.
+#For each holiday, get distribution of spending on the daily level. Pull 31 days of spending for each holiday.
 for h in list(h_dates.keys()):
-  #Pull spending on holiday + 30 days back
+  #Isolate spending to holiday + 30 days back
   h_enddate = h_dates[h]
   h_enddate = datetime.strptime(h_enddate, '%Y%m%d')
   h_startdate = h_enddate - timedelta(days=30)
   h_trans = acds.filter((f.col("date") >= int(h_startdate.strftime('%Y%m%d'))) & (f.col("date") <= int(h_enddate.strftime('%Y%m%d'))))
 
-  #Assign commodity, sub-commodity, and seasonality_score to each gtin_no
+  #Isolate control file to given holiday and
+  #assign commodity, sub-commodity, and seasonality_score to each gtin_no.
   h_pim1 = h_comms.\
     filter(f.col("holiday") == h).\
     select("commodity", "seasonality_score").\
@@ -150,6 +152,8 @@ for h in list(h_dates.keys()):
   #seasonality score for a sub-commodity within that same commodity, then the sub-commodity level
   #seasonality score triumps the commodity level seasonality score
   #when sub-commodity seasonality score > commodity seasonality score
+  #This was used when we were considering weighing dollars spent according to their
+  #seasonality score.
   h_pim = h_pim.fillna({"seasonality_score": 0, "seasonality_sub_score": 0})
   h_pim = h_pim.withColumn(
     "seasonality_score",
@@ -159,7 +163,7 @@ for h in list(h_dates.keys()):
   h_pim = h_pim.orderBy(["gtin_no", "seasonality_score"], ascending=[True, False])
   h_pim = h_pim.select("gtin_no", "commodity", "sub_commodity", "seasonality_score")
   h_pim = h_pim.dropDuplicates(["gtin_no"])
-  #Assign department level info - this will be nice to see when analyzing spending over time
+  #Assign department hierarchy info for micro-department spending over time.
   h_pim = h_pim.join(department_info,
                     ["commodity", "sub_commodity"],
                     "left")
@@ -167,9 +171,9 @@ for h in list(h_dates.keys()):
   h_trans = h_trans.join(h_pim, "gtin_no", "inner")
   del(h_pim1, h_pim2, h_pim)
 
-  #Calculated weighted spending: (seasonal_weight + temporal weight) * net_spend_amt
+  #Calculated weighted spending: (seasonal_weight + temporal weight) * net_spend_amt (not really used)
   h_trans = h_trans.withColumn("weighted_net_spend_amt", f.col("seasonality_score") * f.col("net_spend_amt"))
-  #Mute transactions x days away
+  #Mute transactions x days away (not really used)
   weighted_startdate = h_enddate - timedelta(days=6)
   h_trans = h_trans.withColumn(
     "weighted_net_spend_amt",
@@ -182,7 +186,7 @@ for h in list(h_dates.keys()):
       f.sum("net_spend_amt").alias("dollars_spent"),
       f.sum("weighted_net_spend_amt").alias("weighted_dollars_spent"),
     )
-  #Sum up spending at daily/household level to see spending over time
+  #Sum up spending at daily/household level to see spending over time at overall level
   h_daily = h_department.\
     groupby("date", "ehhn").\
     agg(
@@ -198,12 +202,12 @@ for h in list(h_dates.keys()):
     )
   del(h_startdate, h_enddate, h_trans)
 
-  #Write-out
+  #Write-out as delta files - used in ****.
   output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + h + "/"
   fp = output_dir + "{}_microdepartment_spending".format(h)
-  h_department.write.mode("overwrite").format("delta").save(fp)
+  #h_department.write.mode("overwrite").format("delta").save(fp)
   fp = output_dir + "{}_daily_spending".format(h)
-  h_daily.write.mode("overwrite").format("delta").save(fp)
+  #h_daily.write.mode("overwrite").format("delta").save(fp)
   fp = output_dir + "{}_ehhn_spending".format(h)
-  h_ehhns.write.mode("overwrite").format("delta").save(fp)
+  #h_ehhns.write.mode("overwrite").format("delta").save(fp)
   del(h_department, h_daily, h_ehhns)

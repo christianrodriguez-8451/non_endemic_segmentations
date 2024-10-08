@@ -1,10 +1,28 @@
 # Databricks notebook source
 """
-This is the code used to create the commodity and
-sub-commodity lists that had seasonality scores.
+Demonstrates the methodology in seasonal_outlier_detection.py.
+This code is not necessary in the production process. Its main
+purpose is as an illustrative example for somebody trying to
+learn the methodology.
 
-This is the proof of concept! Code here is to simply illustrate the
-point of the concept and convince the reader of our idea.
+GREETING CARDS is the sub-commodity used for this example. The code
+can be adjusted to analyze other commdities/sub-commodities such as
+PUMPKINS, ARRANGEMENTS, and ***. The methodology can be summarized 
+as follows:
+
+  1) Pull in the sub-commodity's time series of weekly units sold
+  across time.
+  2) Conduct STL (Seasonal Trend Decomposition using LOESS) to
+  decompose the time series into its trend, seasonal, and residual
+  components.
+  3) Estimate the average and standard deviation of the
+  seasonal values.
+  4) Flag as outliers any seasonal values that have a
+  value >= (Mean + 1.645 STD). This is the 95th percentile
+  cutoff in a normal distribution.
+  5) If those outlier values occured on a holiday week,
+  then the sub-commodity is considered part of the holiday's
+  product set for that given holiday.
 """
 
 # COMMAND ----------
