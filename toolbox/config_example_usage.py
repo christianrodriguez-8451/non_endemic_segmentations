@@ -121,5 +121,3 @@ for audience in con.segmentations.seasonal_segmentations:
 segment.tags
 
 # COMMAND ----------
-
-
