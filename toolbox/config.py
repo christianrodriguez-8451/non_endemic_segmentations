@@ -15,9 +15,16 @@ class segmentations:
   regex_segmentations = list(reg_dict.keys())
   generation_segmentations = ["boomers", "gen_x", "millennials", "gen_z"]
   department_segmentations = ["deli_and_bakery", "meat", "produce", "grocery", "food"]
+  seasonal_segmentations =   [
+  "super_bowl", "valentines_day", "st_patricks_day", "easter",
+  "may_5th", "mothers_day", "memorial_day", "fathers_day", "july_4th",
+  "back_to_school", "labor_day", "halloween", "thanksgiving",
+  "christmas_eve", "new_years_eve",
+  ]
   all_segmentations = (
     funlo_segmentations + percentile_segmentations + fuel_segmentations + geospatial_segmentations + embedding_segmentations
     + commodity_segmentations + sensitive_segmentations + regex_segmentations + generation_segmentations + department_segmentations
+    + seasonal_segmentations
   )
   all_segmentations = list(set(all_segmentations))
   all_segmentations.sort()
@@ -314,28 +321,28 @@ audience_dict = {
     "propensity_compisition": ["H", "M"],
     "tags": ["Fuel"],
   },
-  "christmas": {
+  "christmas_eve": {
     "frontend_name": "Winter Holiday Enthusiasts",
     "segment_type": "Seasonal",
-    "propensity_compisition": ["H", "M", "L"],
+    "propensity_compisition": ["H"],
     "tags": ["Seasonal"],
   },
   "easter": {
     "frontend_name": "Spring Holiday Enthusiasts",
     "segment_type": "Seasonal",
-    "propensity_compisition": ["H", "M", "L"],
+    "propensity_compisition": ["H"],
     "tags": ["Seasonal"],
   },
-  "halloweeners": {
+  "halloween": {
     "frontend_name": "Halloween Enthusiasts",
     "segment_type": "Seasonal",
-    "propensity_compisition": ["H", "M", "L"],
+    "propensity_compisition": ["H"],
     "tags": ["Seasonal"],
   },
-  "back-to-school": {
+  "back_to_school": {
     "frontend_name": "Back-to-School Product Shoppers",
-    "segment_type": "Event",
-    "propensity_compisition": ["H", "M"],
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
     "tags": ["Seasonal"],
   },
   "roadies": {
@@ -795,40 +802,178 @@ audience_dict = {
     "tags": ["Demographic"],
   },
   "gen_z": {
-    "frontend_name": "Gen X Shoppers",
+    "frontend_name": "Gen Z Shoppers",
     "segment_type": "Life Stage",
     "propensity_compisition": ["H"],
     "tags": ["Demographic"],
   },
   "food": {
-    "frontend_name": "PLACEHOLDER FOR food",
+    "frontend_name": "Food Department Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
-    "tags": ["Food"],
+    "tags": ["Department"],
   },
   "grocery": {
-    "frontend_name": "PLACEHOLDER FOR grocery",
+    "frontend_name": "Grocery Department Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
-    "tags": ["Food"],
+    "tags": ["Department"],
   },
   "produce": {
-    "frontend_name": "PLACEHOLDER FOR produce",
+    "frontend_name": "Produce Department Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
-    "tags": ["Food"],
+    "tags": ["Department"],
   },
   "meat": {
-    "frontend_name": "PLACEHOLDER FOR meat",
+    "frontend_name": "Meat Department Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
-    "tags": ["Food"],
+    "tags": ["Department"],
   },
   "deli_and_bakery": {
-    "frontend_name": "PLACEHOLDER FOR deli_and_bakery",
+    "frontend_name": "Deli & Bakery Department Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
-    "tags": ["Food"],
+    "tags": ["Department"],
+  },
+  "cabernet": {
+    "frontend_name": "PLACEHOLDER FOR cabernet",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "pinot_noir": {
+    "frontend_name": "PLACEHOLDER FOR pinot_noir",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "merlot": {
+    "frontend_name": "PLACEHOLDER FOR merlot",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "malbec": {
+    "frontend_name": "PLACEHOLDER FOR malbec",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "port": {
+    "frontend_name": "PLACEHOLDER FOR port",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "riesling": {
+    "frontend_name": "PLACEHOLDER FOR riesling",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "moscato": {
+    "frontend_name": "PLACEHOLDER FOR moscato",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "white_zinfandel": {
+    "frontend_name": "PLACEHOLDER FOR white_zinfandel",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "sauvignon_blanc": {
+    "frontend_name": "PLACEHOLDER FOR sauvignon_blanc",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "chardonnay": {
+    "frontend_name": "PLACEHOLDER FOR chardonnay",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "pinot_grigio": {
+    "frontend_name": "PLACEHOLDER FOR pinot_grigio",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "bordeaux": {
+    "frontend_name": "PLACEHOLDER FOR bordeaux",
+    "segment_type": "Food & Beverage",
+    "propensity_compisition": ["H"],
+    "tags": ["Alcohol"],
+  },
+  "super_bowl": {
+    "frontend_name": "PLACEHOLDER FOR super_bowl",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "valentines_day": {
+    "frontend_name": "PLACEHOLDER FOR valentines_day",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "st_patricks_day": {
+    "frontend_name": "PLACEHOLDER FOR st_patricks_day",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "may_5th": {
+    "frontend_name": "PLACEHOLDER FOR may_5th",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "mothers_day": {
+    "frontend_name": "PLACEHOLDER FOR mothers_day",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "memorial_day": {
+    "frontend_name": "PLACEHOLDER FOR memorial_day",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "fathers_day": {
+    "frontend_name": "PLACEHOLDER FOR fathers_day",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "july_4th": {
+    "frontend_name": "PLACEHOLDER FOR july_4th",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "labor_day": {
+    "frontend_name": "PLACEHOLDER FOR labor_day",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "thanksgiving": {
+    "frontend_name": "PLACEHOLDER FOR thanksgiving",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
+  },
+  "new_years_eve": {
+    "frontend_name": "PLACEHOLDER FOR new_years_eve",
+    "segment_type": "Seasonal",
+    "propensity_compisition": ["H"],
+    "tags": ["Seasonal"],
   },
 }
 
@@ -861,6 +1006,9 @@ def get_type(segmentation_name):
 
   elif segmentation_name in segmentations.department_segmentations:
     segmentation_type = "department"
+
+  elif segmentation_name in segmentations.seasonal_segmentations:
+    segmentation_type = "seasonal"
     
   else:
     message = (
@@ -896,6 +1044,9 @@ def get_directory(segmentation_name):
 
   elif segmentation_type == "department":
     segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/department_segmentations/{}/".format(segmentation_name)
+
+  elif segmentation_type == "seasonal":
+    segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/seasonal_segmentations/{}/".format(segmentation_name)
   
   return(segmentation_dir)
 
@@ -910,7 +1061,7 @@ def get_files(segmentation_name):
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "stratum_week=" in x[1]]
 
-  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive", "generations", "department"]:
+  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive", "generations", "department", "seasonal"]:
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
 
@@ -981,7 +1132,7 @@ def get_upc_files(segmentation_name):
 
     files.sort()
     
-  elif (upc_type == "commodities_subcommodities") or (upc_type == "regex")or (upc_type == "department"):
+  elif (upc_type == "commodities_subcommodities") or (upc_type == "regex") or (upc_type == "department"):
     files = dbutils.fs.ls(upc_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
     files.sort()

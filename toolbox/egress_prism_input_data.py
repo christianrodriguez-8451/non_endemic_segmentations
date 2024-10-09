@@ -3,10 +3,6 @@
 Reads in the input data meant for PRISM and converts it from delta to parquet.
 During the read-in, ehhn and segment are the only columns kept. The data is written
 out to audience factory's egress directory.
-
-To Do:
-
-  1) Have this auto-execute for every deployed segmentation.
 """
 
 # COMMAND ----------
