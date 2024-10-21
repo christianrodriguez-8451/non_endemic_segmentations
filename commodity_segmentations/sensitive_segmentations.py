@@ -108,8 +108,8 @@ for s in list(segments_dict.keys()):
 
   #Visually see commodities and sub-commodities used (QC)
   temp = lil_acds.select("commodity", "sub_commodity")
-  temp = temp.orderBy(["commodity", "sub_commodity"])
   temp = temp.dropDuplicates()
+  temp = temp.orderBy(["commodity", "sub_commodity"])
   print(temp.show(50, truncate=False))
 
   #Get a count of how many distinct households (QC)
@@ -121,7 +121,3 @@ for s in list(segments_dict.keys()):
   ehhns = ehhns.withColumn("segment", f.lit("H"))
   fp = f'{con.output_fp}sensitive_segmentations/{s}/{s}_{today}'
   ehhns.write.mode("overwrite").format("delta").save(fp)
-
-# COMMAND ----------
-
-
