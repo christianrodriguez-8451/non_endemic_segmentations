@@ -985,6 +985,54 @@ for seg in segs:
 
 # COMMAND ----------
 
+#Code used to egress most of Cola audiences
+import pyspark.sql.functions as f
+import datetime as dt
+
+brand = "sprite"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+
+segs = [
+  "weekly_single_serve",
+  "weekly_multi_serve",
+]
+i = 0
+for seg in segs:
+  my_fn = brand + "_13week_" + seg + "_hhs"
+  fp = my_dir + my_fn
+
+  #Keep only ehhn and segment
+  df1 = spark.read.format("delta").load(fp)
+  df1 = df1.select("ehhn")
+  df1 = df1.dropDuplicates()
+  df1 = df1.withColumn("segment", f.lit("H"))
+  df1.show(10, False)
+
+  count = df1.count()
+  seg = brand + "_" + seg
+  print("{} household count: {}".format(seg, count))
+
+  if i == 0:
+    df = df1
+  else:
+    df = df.union(df1)
+
+  i += 1
+
+df = df.dropDuplicates()
+count = df.count()
+seg = brand + "_" + seg
+print("Total household count: {}".format(count))
+  
+#Write out to the egress directory and write out in format that engineering expects
+egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+today = dt.datetime.today().strftime('%Y%m%d')
+dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
+df.write.mode("overwrite").format("parquet").save(dest_fp)
+print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))
+
+# COMMAND ----------
+
 df1 = dfs[0]
 df1 = df1.select("ehhn")
 df2 = dfs[1]
@@ -1132,3 +1180,4 @@ for my_fn, seg in zip(my_fns, segments):
 #Intenders - 353,705
 #Weekly single serve - 835
 #Weekly multi serve - 40,064
+#Weekly Single Serve + Multi Serve in one - 40,843
