@@ -274,15 +274,15 @@ def write_out(df, fp, delim=",", fmt="csv"):
 ###Sprite
 #########################################################
 
-#brand = "sprite"
-#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+brand = "sprite"
+my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 #1) Rejectors: Over the last 52 weeks, have purchased Carbonated Soft Drinks at least twice every 30 days,
 #but have not purchased Coca Cola TM.
 #in_fn = "carbonated_soft_drinks_no_{}_upcs.csv".format(brand)
 #notin_fn = "{}_tm_upcs.csv".format(brand)
 
-#max_weeks = 52
+#max_weeks = 13
 #freq_min = 2
 #freq_max = None
 #cycle_length = 30
@@ -294,7 +294,7 @@ def write_out(df, fp, delim=",", fmt="csv"):
 #in_fn = "{}_tm_upcs.csv".format(brand)
 #notin_fn = None
 
-#max_weeks = 52
+#max_weeks = 13
 #freq_min = 1
 #freq_max = 2
 #cycle_length = 90
@@ -306,7 +306,7 @@ def write_out(df, fp, delim=",", fmt="csv"):
 #in_fn = "{}_tm_upcs.csv".format(brand)
 #notin_fn = None
 
-#max_weeks = 52
+#max_weeks = 13
 #freq_min = 1
 #freq_max = 3
 #cycle_length = 30
@@ -318,7 +318,7 @@ def write_out(df, fp, delim=",", fmt="csv"):
 #in_fn = "{}_tm_single_serve_upcs.csv".format(brand)
 #notin_fn = None
 
-#max_weeks = 52
+#max_weeks = 13
 #freq_min = 1
 #freq_max = None
 #cycle_length = 7
@@ -327,15 +327,15 @@ def write_out(df, fp, delim=",", fmt="csv"):
 
 #5) Weekly+ Multi-Serve: Over the last 52 weeks, have purchased
 #Coca Cola TM Multi-Serve at least once every 14 days.
-#in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
-#notin_fn = None
+in_fn = "{}_tm_multi_serve_upcs.csv".format(brand)
+notin_fn = None
 
-#max_weeks = 52
-#freq_min = 1
-#freq_max = None
-#cycle_length = 14
+max_weeks = 13
+freq_min = 1
+freq_max = None
+cycle_length = 14
 
-#output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
+output_fn = brand + "_" + "{}week_".format(max_weeks) + "weekly_multi_serve_hhs"
 
 #########################################################
 ###Fanta
@@ -610,8 +610,8 @@ def write_out(df, fp, delim=",", fmt="csv"):
 ###(re-purposing Diet Coke's files and templates for deployment)
 #########################################################
 
-brand = "diet_coke"
-my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
+#brand = "diet_coke"
+#my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 #1) Rejectors: Over the last 52 weeks, have purchased Total Carbonated Soft Drinks at least twice every 30 days,
 #but have not purchased Coca Cola Cola UPCs.
@@ -652,15 +652,15 @@ my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/
 
 #4) Weekly+: Over the last 52 weeks,
 #have purchased Coca Cola - Cola UPCs at least once every 7 days.
-in_fn = "total_coca_cola_upcs.csv"
-notin_fn = None
+#in_fn = "total_coca_cola_upcs.csv"
+#notin_fn = None
 
-max_weeks = 13
-freq_min = 1
-freq_max = None
-cycle_length = 7
+#max_weeks = 13
+#freq_min = 1
+#freq_max = None
+#cycle_length = 7
 
-output_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
+#output_fn = brand + "_{}week_".format(max_weeks) + "weekly_single_serve_hhs"
 
 # COMMAND ----------
 
@@ -941,15 +941,13 @@ fp = my_dir + output_fn
 satisfied.write.mode("overwrite").format("delta").save(fp)
 del(in_fn, notin_fn, max_weeks, freq_min, freq_max, cycle_length, output_fn, fp)
 
-
 # COMMAND ----------
 
 #Code used to egress most of Cola audiences
-
 import pyspark.sql.functions as f
 import datetime as dt
 
-brand = "diet_coke"
+brand = "sprite"
 my_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/{}_frequency/".format(brand)
 
 dfs = []
@@ -958,7 +956,7 @@ segs = [
   "neutrals",
   "intenders",
   "weekly_single_serve",
-  #"weekly_multi_serve",
+  "weekly_multi_serve",
 ]
 for seg in segs:
   my_fn = brand + "_13week_" + seg + "_hhs"
@@ -967,6 +965,7 @@ for seg in segs:
   #Keep only ehhn and segment
   df = spark.read.format("delta").load(fp)
   df = df.select("ehhn")
+  df = df.dropDuplicates()
   df = df.withColumn("segment", f.lit("H"))
   df.show(10, False)
 
@@ -1126,3 +1125,10 @@ for my_fn, seg in zip(my_fns, segments):
 #Intenders - 
 #Weekly+ - 
 #Altogether - 
+
+#Sprite (10/22/2024)
+#Rejectors - 1,093,588
+#Neutrals - 4,352,933
+#Intenders - 353,705
+#Weekly single serve - 835
+#Weekly multi serve - 40,064
