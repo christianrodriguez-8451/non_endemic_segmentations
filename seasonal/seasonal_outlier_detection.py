@@ -1,6 +1,6 @@
 # Databricks notebook source
 """
-This notebook is ran after seasonal_history.py.
+This code is ran after seasonal_history.py.
 
 Applies the methodology described in seasonal_outlier_detection_poc.py
 to every commodity in seasonal_commodity_history and to every
@@ -32,7 +32,7 @@ has been reviewed and finalized, turn the workbook into a CSV.
 The CSV expected format is described in seasonal_spending.py.
 
 To aid DSR's choices, output seasonal_commodity_history as a CSV
-and create a pivot chart (line plot) out of it. Add slicers for
+and create an Excel pivot chart (line plot) out of it. Add slicers for
 commodity/sub-commodity and you can visualize multiple time
 series simultaneously. Assign the pivot fields
 as follows:

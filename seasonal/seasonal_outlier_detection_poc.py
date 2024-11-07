@@ -7,7 +7,7 @@ learn the methodology.
 
 GREETING CARDS is the sub-commodity used for this example. The code
 can be adjusted to analyze other commdities/sub-commodities such as
-PUMPKINS, ARRANGEMENTS, and ***. The methodology can be summarized 
+PUMPKINS, ARRANGEMENTS, and GREETING CARDS. The methodology can be summarized 
 as follows:
 
   1) Pull in the sub-commodity's time series of weekly units sold

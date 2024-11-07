@@ -1,11 +1,20 @@
 # Databricks notebook source
 """
-After the commodity + sub-commodity list has been
-drafted or reviewed, run this notebook to get spending
-at the micro-department/date/ehhn level, date/ehhn level,
-and at the ehhn level on the 31 days leading up to the season.
+This code can be ran after:
 
+  1) seasonal_outlier_detection.py. In this case, the seasons'
+  product sets have been initialized from seasonal_outlier_detection.py
+  and the spending files must be created so that seasonal_visuals.py
+  can create each season's data visuals.
+  
+  OR
 
+  2) seasonal_control_file_adjustments.py. In this case, the account
+  managers have provided their recommendations for the seasons' final
+  product sets and the spending files must be re-created so that they
+  can be used in seasonal_audience_final.py.
+
+vjvjvjhvhjcxztdiujooigffutfjytf
 """
 
 # COMMAND ----------
@@ -25,10 +34,7 @@ spark = SparkSession.builder.appName("seasonal_spending").getOrCreate()
 # COMMAND ----------
 
 #Read in control file with chosen commodities + sub-commodities per holiday
-fp = (
-  "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" +
-  "seasonal_commodities_control2.csv"
-)
+fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/seasonal_commodities_control_final_2023.csv"
 schema = t.StructType([
     t.StructField("holiday", t.StringType(), True),
     t.StructField("commodity", t.StringType(), True),
@@ -202,12 +208,12 @@ for h in list(h_dates.keys()):
     )
   del(h_startdate, h_enddate, h_trans)
 
-  #Write-out as delta files - used in ****.
+  #Write-out as delta files - used in seasonal_visuals.py and seasonal_audience_final.py.
   output_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" + h + "/"
   fp = output_dir + "{}_microdepartment_spending".format(h)
-  #h_department.write.mode("overwrite").format("delta").save(fp)
+  h_department.write.mode("overwrite").format("delta").save(fp)
   fp = output_dir + "{}_daily_spending".format(h)
-  #h_daily.write.mode("overwrite").format("delta").save(fp)
+  h_daily.write.mode("overwrite").format("delta").save(fp)
   fp = output_dir + "{}_ehhn_spending".format(h)
-  #h_ehhns.write.mode("overwrite").format("delta").save(fp)
+  h_ehhns.write.mode("overwrite").format("delta").save(fp)
   del(h_department, h_daily, h_ehhns)

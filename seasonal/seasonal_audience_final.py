@@ -1,32 +1,15 @@
 # Databricks notebook source
 """
-This is the code used to identify the season households
-given the season's product list. Once you are happy with the
-final list, run this to product the household sets considered
-as the given audience.
+This code is ran after seasonal_spending.py.
+
+This is the code used to identify the season's households
+given the season's product list. Households are selected
+by observing all purchases made in the season's product
+list for the 4 days leading up the season. Purchases are
+aggregated at the household level and the households
+that spent more than the 25th percentile are considered
+part of the season's audience.
 """
-
-# COMMAND ----------
-
-#Read in seasonal commodities + sub-commodities control file we have out there.
-#Read in the control file and have it ready for each
-#audience's commodities + sub-commodities
-fp = (
-  "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/" +
-  "seasonal_commodities_control2.csv"
-)
-schema = t.StructType([
-    t.StructField("holiday", t.StringType(), True),
-    t.StructField("commodity", t.StringType(), True),
-    t.StructField("sub_commodity", t.StringType(), True),
-    t.StructField("seasonality_score", t.IntegerType(), True)
-])
-control = spark.read.csv(fp, schema=schema, header=True)
-
-#Read in the blue list
-
-#Drop everything in the blue list.
-
 
 # COMMAND ----------
 
@@ -41,6 +24,20 @@ import resources.config as config
 
 # Initialize a Spark session
 spark = SparkSession.builder.appName("seasonal_audiences").getOrCreate()
+
+# COMMAND ----------
+
+#Read in seasonal commodities + sub-commodities control file we have out there.
+#Read in the control file and have it ready for each
+#audience's commodities + sub-commodities
+fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/seasonal_commodities_control_final_2023.csv"
+schema = t.StructType([
+    t.StructField("holiday", t.StringType(), True),
+    t.StructField("commodity", t.StringType(), True),
+    t.StructField("sub_commodity", t.StringType(), True),
+    t.StructField("seasonality_score", t.IntegerType(), True)
+])
+control = spark.read.csv(fp, schema=schema, header=True)
 
 # COMMAND ----------
 
