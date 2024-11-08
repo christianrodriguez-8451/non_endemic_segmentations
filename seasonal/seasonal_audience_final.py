@@ -9,6 +9,9 @@ list for the 4 days leading up the season. Purchases are
 aggregated at the household level and the households
 that spent more than the 25th percentile are considered
 part of the season's audience.
+
+The daily spending files from seasonal_spending are used
+as input files for this code.
 """
 
 # COMMAND ----------

@@ -14,7 +14,20 @@ This code can be ran after:
   product sets and the spending files must be re-created so that they
   can be used in seasonal_audience_final.py.
 
-vjvjvjhvhjcxztdiujooigffutfjytf
+Given the season's product list, transactions are pulled for the 31 days
+leading up to the season's date. The only transactions kept are the ones
+that pertian to the season's product set. These transactions are
+aggregated at various levels:
+
+  1) Daily household spending for each of the 31 days parsed out by
+  micro-department.
+
+  2) Daily household spending for each of the 31 days.
+
+  3) Household spending when considering all 31 days at once.
+
+For each season, delta files are outputted for each of the three
+levels of aggregation. 
 """
 
 # COMMAND ----------
@@ -33,7 +46,7 @@ spark = SparkSession.builder.appName("seasonal_spending").getOrCreate()
 
 # COMMAND ----------
 
-#Read in control file with chosen commodities + sub-commodities per holiday
+#This is the control file that dictates each season's assigned products.
 fp = f"abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/adhoc/seasonal_commodities_control_final_2023.csv"
 schema = t.StructType([
     t.StructField("holiday", t.StringType(), True),
