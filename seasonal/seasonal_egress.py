@@ -9,7 +9,7 @@ parquet format, and eventually the egress moves them over
 to On-Prem.
 
 This code is a smaller and simpler version of
-toolbox/egress_prism_input_data. This is a small bandage until
+toolbox/egress_prism_input_data.py. This is a small bandage until
 the seasonal audiences are incorporated into toolbox/config.py.
 """
 

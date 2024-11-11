@@ -10,7 +10,7 @@ aggregated at the household level and the households
 that spent more than the 25th percentile are considered
 part of the season's audience.
 
-The daily spending files from seasonal_spending are used
+The daily spending files from seasonal_spending.py are used
 as input files for this code.
 """
 
