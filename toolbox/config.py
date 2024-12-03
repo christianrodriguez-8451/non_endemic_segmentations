@@ -838,73 +838,73 @@ audience_dict = {
     "tags": ["Department"],
   },
   "cabernet": {
-    "frontend_name": "PLACEHOLDER FOR cabernet",
+    "frontend_name": "Cabernet Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "pinot_noir": {
-    "frontend_name": "PLACEHOLDER FOR pinot_noir",
+    "frontend_name": "Pinot Noir Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "merlot": {
-    "frontend_name": "PLACEHOLDER FOR merlot",
+    "frontend_name": "Merlot Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "malbec": {
-    "frontend_name": "PLACEHOLDER FOR malbec",
+    "frontend_name": "Malbec Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "port": {
-    "frontend_name": "PLACEHOLDER FOR port",
+    "frontend_name": "Port Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "riesling": {
-    "frontend_name": "PLACEHOLDER FOR riesling",
+    "frontend_name": "Riesling Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "moscato": {
-    "frontend_name": "PLACEHOLDER FOR moscato",
+    "frontend_name": "Moscato Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "white_zinfandel": {
-    "frontend_name": "PLACEHOLDER FOR white_zinfandel",
+    "frontend_name": "White Zinfandel Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "sauvignon_blanc": {
-    "frontend_name": "PLACEHOLDER FOR sauvignon_blanc",
+    "frontend_name": "Sauvignon Blanc Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "chardonnay": {
-    "frontend_name": "PLACEHOLDER FOR chardonnay",
+    "frontend_name": "Chardonnay Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "pinot_grigio": {
-    "frontend_name": "PLACEHOLDER FOR pinot_grigio",
+    "frontend_name": "Pinot Grigio Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
   },
   "bordeaux": {
-    "frontend_name": "PLACEHOLDER FOR bordeaux",
+    "frontend_name": "Bordeaux Buyers",
     "segment_type": "Food & Beverage",
     "propensity_compisition": ["H"],
     "tags": ["Alcohol"],
@@ -1025,7 +1025,7 @@ def get_directory(segmentation_name):
   segmentation_type = get_type(segmentation_name)
 
   if segmentation_type == "funlo":
-    segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/embedded_dimensions/customer_data_assets/segment_behavior/segmentation/modality={}/".format(segmentation_name)
+    segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/funlo_lite/{}/".format(segmentation_name)
 
   elif segmentation_type == "percentile":
     segmentation_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/commodity_segments/percentile_segmentations/{}/".format(segmentation_name)
@@ -1057,13 +1057,14 @@ def get_files(segmentation_name):
   segmentation_dir = get_directory(segmentation_name)
 
   dbutils = DBUtils()
-  if segmentation_type == "funlo":
-    files = dbutils.fs.ls(segmentation_dir)
-    files = [x[1] for x in files if "stratum_week=" in x[1]]
-
-  elif segmentation_type in ["percentile", "fuel", "geospatial", "sensitive", "generations", "department", "seasonal"]:
+  if segmentation_type in ["funlo", "percentile", "fuel", "geospatial", "sensitive", "generations", "department", "seasonal"]:
     files = dbutils.fs.ls(segmentation_dir)
     files = [x[1] for x in files if "{}_".format(segmentation_name) in x[1]]
+
+  else:
+    message = "{} does not have a recognizable type ({}). Check the get_files() function under toolbox.config.py and consider adding this type into the acceptable types list.".format(segmentation_name, segmentation_type)
+    raise ValueError(message)
+    del(message)
 
   files.sort()
   return(files)
