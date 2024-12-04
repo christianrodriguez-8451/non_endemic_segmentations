@@ -3,10 +3,6 @@
 Reads in the input data meant for PRISM and converts it from delta to parquet.
 During the read-in, ehhn and segment are the only columns kept. The data is written
 out to audience factory's egress directory.
-
-To Do:
-
-  1) Have this auto-execute for every deployed segmentation.
 """
 
 # COMMAND ----------
@@ -46,6 +42,40 @@ def write_out(df, fp, delim=",", fmt="csv"):
   temporary_fp = os.path.join(temp_target, dbutils.fs.ls(temp_target)[3][1])
   dbutils.fs.cp(temporary_fp, fp)
   dbutils.fs.rm(temp_target, recurse=True)
+
+# COMMAND ----------
+
+#Check if the receipt files has been created already.
+#If so, that means that means the egressor ran.
+today = dt.datetime.today().strftime('%Y%m%d')
+#Commented line below was used to test code.
+#today = "20241016"
+receipt_fp = (
+  "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress_receipts/" +
+  "egress_{}.csv".format(today)
+)
+
+#If receipt_fp exists, then we will add 1 to i.
+i = 0
+try:
+  #Below will throw an error if the filepath does NOT exists.
+  dbutils.fs.ls(receipt_fp)
+  i += 1
+except:
+  #Error was triggered b/c filepath does NOT exists (as expected).
+  message = f"No egress receipt detected for today ({today})."
+  print(message)
+  del(message)
+
+if i > 0:
+  #dbutils.fs.ls() executed successfully. Implies that egressor was run today. Abort the current run.
+  message = f"{receipt_fp} exists. The egressor was already executed today. Aborting execution."
+  raise ValueError(message)
+
+#Directory where all files are written out as parquet to be egressed.
+egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
+
+# COMMAND ----------
 
 #Get all productionized segmentations
 segs = con.segmentations.all_segmentations
@@ -90,8 +120,6 @@ for seg in segs:
     continue
     
   #Write out to the egress directory and write out in format that engineering expects
-  egress_dir = "abfss://media@sa8451dbxadhocprd.dfs.core.windows.net/audience_factory/egress"
-  today = dt.datetime.today().strftime('%Y%m%d')
   dest_fp = egress_dir + '/' + seg + '/' + seg + '_' + today
   df.write.mode("overwrite").format("parquet").save(dest_fp)
   print("SUCCESS - Wrote out to {}!\n\n".format(dest_fp))

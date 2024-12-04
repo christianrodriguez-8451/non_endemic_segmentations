@@ -72,6 +72,11 @@ pim = pim.select(
   "department", "sub_department", "micro_department",
   "commodity", "sub_commodity",
 )
+
+#Filters to comply with the Privacy and Compliance
+#To do: point to the official file of which commodities, sub-commodities, and departments.
+pim = pim.filter(f.col("sub_department") != "LIQUOR")
+pim = pim.filter(f.col("micro_department") != "PET")
 pim.cache()
 
 # COMMAND ----------
