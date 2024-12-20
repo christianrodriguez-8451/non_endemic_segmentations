@@ -24,7 +24,7 @@ commodity_segmentations = {
   'fitness_enthusiast': {
     'frontend_name': '',
     'commodities': [
-      'ATHLETICS', 'EXERCISE', 'NF SPORTS NUTRITION',
+      'ATHLETICS', 'EXERCISE',
       'WOMENS ATHLETIC', 'JR SPORTWEAR TOPS', 'CHILDRENS ATHLETIC',
     ],
     'sub_commodities': [
@@ -389,7 +389,28 @@ commodity_segmentations = {
     'sub_commodities': ['AUTO BODY PAINT/ADHESIVES', 'BATTERIES', 'ELECTRICAL ITEMS', 'GAS CANS AND FUNNELS', 'OIL FILTERS AND ACCESSORIES', 'ANTIFREEZE', 'APPEARANCE CHEMICALS', 'CARB/BRAKE FLUIDS/LUBS', 'FUNCTIONAL FLUIDS', 'LUBRICANTS/CLEANERS', 'RADIATOR ADDITIVES', 'WINDSHIELD'],
     'weeks': 52,
     'live': False,
-  }
+  },
+  'gift_cards': {
+    'frontend_name': '',
+    'commodities': ["3RD PARTY GIFT CARDS"],
+    'sub_commodities': [],
+    'weeks': 52,
+    'live': False,
+  },
+  'gift_cards_dining': {
+    'frontend_name': '',
+    'commodities': [],
+    'sub_commodities': ["DINING"],
+    'weeks': 52,
+    'live': False,
+  },
+  'premade_meals': {
+    'frontend_name': '',
+    'commodities': ["COLD MEAL SOLUTIONS - BULK", "SELF SERVE COLD FOODS", "HOT MEAL SOLUTIONS", "SALAD BAR"],
+    'sub_commodities': [],
+    'weeks': 52,
+    'live': False,
+  },
 }
 sensitive_segmentations = {
   "scotch": {
@@ -766,10 +787,10 @@ regex_segmentations = {
 
 #Segmentations that go through percentile propensity ranking instead of fun-lo propensity ranking
 percentile_segmentations = [
-  "fitness_enthusiast", "beautists", "beverage_enchancers", "back-to-school",
-  "summer_bbq", "convenient_breakfast", "energy_beveragist", "indoor_decor_and_gardening",
+  'fitness_enthusiast', 'beautists', 'beverage_enchancers',
+  'summer_bbq', 'convenient_breakfast', 'energy_beveragist', 'indoor_decor_and_gardening',
   'houses_with_children', 'fruit_and_natural_snackers', 'isotonic_beveragist', 'meat_snackers',
   'natural_beveragist', 'outdoor_decor_and_gardening', 'pizza_meal_households', 'reader',
-  'asian_cuisine', 'artsy_folk', 'camper',
-  'halloweeners', 'christmas', 'easter', 'casual_auto_fixers',
+  'asian_cuisine', 'artsy_folk', 'camper', 'casual_auto_fixers',
+  'gift_cards', 'gift_cards_dining', 'premade_meals',
 ]
